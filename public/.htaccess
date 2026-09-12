@@ -1,0 +1,21 @@
+<IfModule mod_rewrite.c>
+  Options -Multiviews
+  RewriteEngine On
+  RewriteBase /school/public/
+  RewriteRule ^index\.php$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule ^(.+)$ index.php?url=$1 [BCTLS,QSA,L]
+</IfModule>
+
+# GZIP compression for dynamic HTML & JSON
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/css application/json application/javascript
+</IfModule>
+
+# HTTP Keep-Alive for persistent browser connections
+<IfModule mod_headers.c>
+  Header set Connection keep-alive
+</IfModule>
+
+

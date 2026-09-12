@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Fees & Admission Workflow System Guide</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@500;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #3730a3;
+            --primary-light: #eef2ff;
+            --secondary: #0ea5e9;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #0f172a;
+            --slate: #1e293b;
+            --light: #f8fafc;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            color: var(--slate);
+        }
+
+        /* Hero Banner */
+        .hero-banner {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);
+            color: white;
+            padding: 50px 0 45px;
+            border-bottom: 4px solid #6366f1;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero-banner::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(99,102,241,0.18) 0%, rgba(255,255,255,0) 70%);
+            border-radius: 50%;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar-nav {
+            position: sticky;
+            top: 25px;
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+            border: 1px solid var(--border);
+        }
+        .sidebar-nav a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 14px;
+            color: #475569;
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 600;
+            border-radius: 10px;
+            transition: all 0.2s ease;
+            margin-bottom: 4px;
+        }
+        .sidebar-nav a:hover, .sidebar-nav a.active {
+            background: var(--primary-light);
+            color: var(--primary);
+            transform: translateX(4px);
+        }
+
+        /* Main Content Card */
+        .doc-card {
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 32px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            border: 1px solid var(--border);
+            transition: all 0.2s ease;
+        }
+        .doc-card:hover {
+            box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+        }
+
+        /* Step Card */
+        .workflow-step {
+            position: relative;
+            padding-left: 32px;
+            margin-bottom: 28px;
+        }
+        .workflow-step::before {
+            content: '';
+            position: absolute;
+            left: 11px;
+            top: 32px;
+            bottom: -20px;
+            width: 2px;
+            background: #cbd5e1;
+        }
+        .workflow-step:last-child::before {
+            display: none;
+        }
+        .step-circle {
+            position: absolute;
+            left: 0;
+            top: 2px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 800;
+            box-shadow: 0 0 0 4px var(--primary-light);
+        }
+
+        /* Code/Schema Badges */
+        .table-pill {
+            font-family: 'Fira Code', monospace;
+            background: #f1f5f9;
+            color: #0f172a;
+            border: 1px solid #cbd5e1;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        /* Diagram Box */
+        .diagram-container {
+            background: #0f172a;
+            color: #f8fafc;
+            border-radius: 16px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 1px solid #334155;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.84rem;
+            overflow-x: auto;
+        }
+
+        /* Highlight Ribbon */
+        .highlight-box {
+            border-left: 4px solid var(--primary);
+            background: #f8fafc;
+            padding: 16px 20px;
+            border-radius: 0 12px 12px 0;
+            margin: 18px 0;
+        }
+
+        /* Interactive Badge */
+        .badge-live {
+            background: #ecfdf5;
+            color: #059669;
+            border: 1px solid #a7f3d0;
+            font-size: 0.74rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        /* Quick Action Link */
+        .quick-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 6px 14px;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        @media print {
+            .sidebar-nav, .no-print { display: none !important; }
+            .col-lg-9 { width: 100% !important; }
+            .doc-card { box-shadow: none !important; border: 1px solid #94a3b8 !important; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- HERO HEADER -->
+<div class="hero-banner">
+    <div class="container">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <span class="badge bg-warning text-dark fw-bold px-3 py-1 mb-2 text-uppercase" style="letter-spacing: 1px; font-size: 0.72rem;">
+                    <i class="fa fa-book-open me-1"></i> Official System Documentation
+                </span>
+                <h1 class="display-6 fw-bold text-white mb-1">
+                    School Fees &amp; Admission Workflow Guide
+                </h1>
+                <p class="text-white-50 mb-0 fs-6">
+                    Comprehensive technical &amp; functional manual for Fee Structure, Monthly Billing, Admission Tokens &amp; Dual-Copy Challans
+                </p>
+            </div>
+            <div class="d-flex align-items-center gap-2 no-print">
+                <button onclick="window.print()" class="btn btn-outline-light btn-sm fw-bold px-3 py-2" style="border-radius: 10px;">
+                    <i class="fa fa-print me-1"></i> Print / Save PDF
+                </button>
+                <a href="/school/fees/collect" class="btn btn-warning text-dark btn-sm fw-bold px-3 py-2" style="border-radius: 10px;">
+                    <i class="fa fa-cash-register me-1"></i> Open Fees Hub &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN CONTAINER -->
+<div class="container my-5">
+    <div class="row g-4">
+
+        <!-- SIDEBAR TOC -->
+        <div class="col-lg-3">
+            <div class="sidebar-nav">
+                <div class="small fw-bold text-uppercase text-muted mb-3" style="font-size: 0.72rem; letter-spacing: 0.8px;">
+                    <i class="fa fa-list-ol me-1 text-primary"></i> Documentation Index
+                </div>
+                <a href="#overview"><i class="fa fa-sitemap text-primary"></i> 1. Executive Architecture</a>
+                <a href="#pipeline"><i class="fa fa-stream text-info"></i> 2. End-to-End Pipeline</a>
+                <a href="#models"><i class="fa fa-database text-success"></i> 3. Database Schema &amp; Models</a>
+                <a href="#normal-monthly"><i class="fa fa-calendar-alt text-primary"></i> 4. Regular Monthly Vouchers</a>
+                <a href="#admission-token"><i class="fa fa-ticket-alt text-warning"></i> 5. Admission Fee Token Hub</a>
+                <a href="#collect-hub"><i class="fa fa-cash-register text-success"></i> 6. Collection Register</a>
+                <a href="#challan-bank"><i class="fa fa-money-check text-secondary"></i> 7. 3-Copy Bank Challan</a>
+                <a href="#defaulters"><i class="fa fa-user-clock text-danger"></i> 8. Defaulters &amp; Aging</a>
+                <a href="#integration"><i class="fa fa-sync-alt text-primary"></i> 9. Accounting Sync</a>
+            </div>
+        </div>
+
+        <!-- MAIN DOCUMENTATION -->
+        <div class="col-lg-9">
+
+            <!-- SECTION 1: EXECUTIVE ARCHITECTURE -->
+            <div class="doc-card" id="overview">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                    <div>
+                        <span class="badge bg-primary text-white mb-1" style="font-size: 0.72rem;">SECTION 1</span>
+                        <h3 class="fw-bold mb-0">Executive Architecture &amp; Lifecycle</h3>
+                    </div>
+                    <span class="badge-live"><i class="fa fa-check-circle me-1"></i> Active in Production</span>
+                </div>
+
+                <p class="text-muted">
+                    School Management System me Fees Engine aik <strong>Multi-Tiered Relational Architecture</strong> par mabni hai jo dono workflows ko aapas me bina kisi conflict ke integrate karta hai:
+                </p>
+
+                <!-- Architecture Diagram -->
+                <div class="diagram-container">
+<pre style="margin: 0; color: #38bdf8;">
++---------------------------------------------------------------------------------------------------------+
+|                                    SCHOOL FEES &amp; ADMISSIONS LIFECYCLE                                   |
++---------------------------------------------------------------------------------------------------------+
+                                                     |
+             +---------------------------------------+---------------------------------------+
+             |                                                                               |
+             v                                                                               v
+   [ 1. FRESH / NEW ADMISSION FLOW ]                                         [ 2. REGULAR ENROLLED CYCLE ]
+   ---------------------------------                                         -----------------------------
+   * Walk-in or Online Applicant                                             * Enrolled Students in Class
+   * Admission Form (printAdmission)                                         * Monthly Billing Engine (/fees/generateMonthly)
+   * Instant Admission Fee Token Hub                                         * Batch Sibling Concessions (10%/20%)
+   * Token Slip (TKN-ADM-2026-XXXX)                                          * Monthly Vouchers (CHL-YYYYMM-XXXX)
+   * Dual-Copy (Office + Student)                                            * Regular Fees Collection Counter
+             |                                                                               |
+             +---------------------------------------+---------------------------------------+
+                                                     |
+                                                     v
+                                       +----------------------------+
+                                       |   FEES HUB &amp; COLLECTION    |
+                                       |      (/fees/collect)       |
+                                       +----------------------------+
+                                                     |
+                    +--------------------------------+--------------------------------+
+                    |                                |                                |
+                    v                                v                                v
+       [ In-Place Fast Payments ]      [ 3-Copy Bank Challans ]         [ Defaulters Aging Ledger ]
+       * Real-time AJAX payment        * Bank, School, Student Copy     * 1-30, 31-60, 61-90, 90+ Days
+       * Instant Official Receipt      * Barcodes &amp; Late Fines          * Automated SMS &amp; Notices
+       * Auto-Sync to Income Ledger    * Verified Bank IBAN             * Cumulative Balance Tracking
+</pre>
+                </div>
+
+                <div class="row g-3 mt-2">
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-3 border h-100">
+                            <h6 class="fw-bold text-dark mb-1"><i class="fa fa-calendar-check text-primary me-2"></i>Normal Monthly Fees ("Baqi Normal Chalta Rahay")</h6>
+                            <p class="small text-muted mb-0">
+                                Regular enrolled students ke liye mahana vouchers class-wise generate hotay hain. Har student ka sibling discount auto calculate hota hai aur standard voucher generate hota hai.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-3 border h-100">
+                            <h6 class="fw-bold text-dark mb-1"><i class="fa fa-ticket-alt text-warning me-2"></i>Fresh Admission Token Generator</h6>
+                            <p class="small text-muted mb-0">
+                                Naye admission ke waqt registration token, prospectus charges, security deposit aur 1st month tuition fee ka foran <strong>Dual-Copy Token Slip</strong> issue hota hai.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 2: STEP-BY-STEP PIPELINE -->
+            <div class="doc-card" id="pipeline">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                    <div>
+                        <span class="badge bg-info text-white mb-1" style="font-size: 0.72rem;">SECTION 2</span>
+                        <h3 class="fw-bold mb-0">Complete Step-by-Step Operational Pipeline</h3>
+                    </div>
+                </div>
+
+                <div class="workflow-step">
+                    <div class="step-circle">1</div>
+                    <h5 class="fw-bold mb-1">Fee Heads / Types Creation (`fee_types`)</h5>
+                    <p class="text-muted small mb-2">
+                        System me pehle fee heads bante hain (e.g. <code>TUI</code> = Tuition Fee, <code>ADM</code> = Admission Fee, <code>LAB</code> = Computer &amp; Science Lab, <code>UTL</code> = Generator &amp; Utility).
+                    </p>
+                    <span class="table-pill">fee_types (id, school_id, type_name, type_code, description)</span>
+                </div>
+
+                <div class="workflow-step">
+                    <div class="step-circle">2</div>
+                    <h5 class="fw-bold mb-1">Fee Group Packages (`fee_groups` &amp; `fee_groups_types`)</h5>
+                    <p class="text-muted small mb-2">
+                        Heads ko group karke package banaya jata hai (e.g. <em>"Class 9th Science Fee Package"</em>). Har head ki specific amount aur fine set ki jati hai.
+                    </p>
+                    <span class="table-pill">fee_groups</span> &bull; <span class="table-pill">fee_groups_types (amount, due_date, fine_amount)</span>
+                </div>
+
+                <div class="workflow-step">
+                    <div class="step-circle">3</div>
+                    <h5 class="fw-bold mb-1">Class Assignment (`student_fees`)</h5>
+                    <p class="text-muted small mb-2">
+                        Jab package class ko assign hota hai, ya koi student enroll hota hai, to <code>student_fees</code> me entry create ho jati hai.
+                    </p>
+                    <span class="table-pill">student_fees (student_id, challan_no, billing_month, due_date, status)</span>
+                </div>
+
+                <div class="workflow-step">
+                    <div class="step-circle">4</div>
+                    <h5 class="fw-bold mb-1">Payment Recording &amp; Income Sync (`fee_payments` &amp; `incomes`)</h5>
+                    <p class="text-muted small mb-2">
+                        Jab cashier fee receive karta hai:
+                        <ul class="small text-muted ps-3 mb-1">
+                            <li><code>fee_payments</code> me transaction record hoti hai (Cash / Bank / Online).</li>
+                            <li><code>student_fees.status</code> update ho kar <code>paid</code> ya <code>partial</code> ho jata hai.</li>
+                            <li><strong>Auto Accounting Sync:</strong> System automatically school ke Accounting Ledger (<code>incomes</code>) me fee payment ki credit entry daal deta hai!</li>
+                        </ul>
+                    </p>
+                    <span class="table-pill">fee_payments</span> &bull; <span class="table-pill">incomes (Income::syncFeePayment)</span>
+                </div>
+            </div>
+
+            <!-- SECTION 3: DATABASE SCHEMA & MODELS -->
+            <div class="doc-card" id="models">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                    <div>
+                        <span class="badge bg-success text-white mb-1" style="font-size: 0.72rem;">SECTION 3</span>
+                        <h3 class="fw-bold mb-0">Database Tables &amp; Schema Mapping</h3>
+                    </div>
+                </div>
+
+                <p class="text-muted small">
+                    Fees module database me in core tables ke zariye kaam karta hai:
+                </p>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm align-middle" style="font-size: 0.84rem;">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="width: 25%;">Table Name</th>
+                                <th style="width: 35%;">Key Columns</th>
+                                <th style="width: 40%;">Function &amp; Role</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="fw-bold text-primary font-monospace">fee_types</td>
+                                <td><code>id, school_id, type_name, type_code</code></td>
+                                <td>Fee particulars ki definition (Tuition, Admission, Exam, etc.)</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold text-primary font-monospace">fee_groups</td>
+                                <td><code>id, school_id, group_name, description</code></td>
+                                <td>Classes ke liye fee packages (e.g. Matric Science Package)</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold text-primary font-monospace">fee_groups_types</td>
+                                <td><code>id, fee_group_id, fee_type_id, amount, fine_amount</code></td>
+                                <td>Master link: Kounse group me kounsa head kitni amount ka hai</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold text-primary font-monospace">student_fees</td>
+                                <td><code>id, student_id, fee_groups_types_id, challan_no, billing_month, due_date, sibling_discount, status</code></td>
+                                <td>Student ka monthly ya admission voucher record (Unpaid / Paid / Partial)</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold text-primary font-monospace">fee_payments</td>
+                                <td><code>id, student_fee_id, mode, amount, discount, fine, payment_date, note</code></td>
+                                <td>Received payments ka ledger (Cash, Bank, JazzCash)</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold text-primary font-monospace">school_banks</td>
+                                <td><code>bank_name, branch_name, account_title, account_no, iban, is_default</code></td>
+                                <td>Bank challan ke print par aane walay authentic bank accounts</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SECTION 4: NORMAL MONTHLY VOUCHERS -->
+            <div class="doc-card" id="normal-monthly">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                    <div>
+                        <span class="badge bg-primary text-white mb-1" style="font-size: 0.72rem;">SECTION 4</span>
+                        <h3 class="fw-bold mb-0">Regular Monthly Vouchers (Normal Billing)</h3>
+                    </div>
+                    <a href="/school/fees/batchChallans" target="_blank" class="quick-btn btn-outline-primary border">
+                        <i class="fa fa-external-link-alt me-1"></i> Open Batch Challans
+                    </a>
+                </div>
+
+                <div class="highlight-box">
+                    <h6 class="fw-bold text-dark mb-1">
+                        <i class="fa fa-info-circle text-primary me-2"></i>Baqi Normal Flow Kaise Chalta Hai?
+                    </h6>
+                    <p class="small text-muted mb-0">
+                        School ke regular enrolled students ke liye monthly cycle bilkul standard chalta hai. Admin <code>/fees/collect</code> ya <code>/fees/challan</code> par jakar <strong>"Batch Generate Monthly Vouchers"</strong> run karta hai.
+                    </p>
+                </div>
+
+                <h6 class="fw-bold mt-3 mb-2">Automated Sibling Concession Engine:</h6>
+                <ul class="text-muted small">
+                    <li>Pehle bache (1st child) ki regular 100% tuition fee charge hoti hai.</li>
+                    <li>Doosre bache (2nd sibling) ko automatically <strong>10% concession</strong> milti hai.</li>
+                    <li>Teesre aur us se zyada (3rd+ sibling) ko automatically <strong>20% concession</strong> milti hai.</li>
+                    <li>System duplicate check karta hai taake aik hi mahinay (e.g. October 2026) ka voucher dobara duplicate na bane.</li>
+                </ul>
+            </div>
+
+            <!-- SECTION 5: ADMISSION FEE TOKEN HUB -->
+            <div class="doc-card" id="admission-token">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                    <div>
+                        <span class="badge bg-warning text-dark mb-1" style="font-size: 0.72rem;">SECTION 5</span>
+                        <h3 class="fw-bold mb-0">Fresh / New Admission Fee &amp; Token Hub</h3>
+                    </div>
+                    <a href="/school/students/printAdmission?blank=1" target="_blank" class="quick-btn btn-outline-warning text-dark border">
+                        <i class="fa fa-print me-1"></i> Open Admission Form
+                    </a>
+                </div>
+
+                <p class="text-muted small">
+                    Jab koi naya student admission leta hai ya online form approve hota hai, to uska <strong>Admission Fee Token</strong> generate kiya jata hai.
+                </p>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="card border-0 bg-light p-3 rounded-3 h-100">
+                            <h6 class="fw-bold text-dark"><i class="fa fa-check-circle text-success me-1"></i> 1. Fees Hub Se Token Generator</h6>
+                            <p class="small text-muted mb-2">
+                                <code>/fees/collect</code> ke top par <strong>`[ 🎟️ Fee Generator &amp; Token ]`</strong> click karein.
+                            </p>
+                            <ul class="small text-muted ps-3 mb-0">
+                                <li>Enrolled Student ya Walk-in Candidate select karein.</li>
+                                <li>Admission Registration Fee, Prospectus Token, Security Deposit, 1st Month Tuition heads select karein.</li>
+                                <li>Status: <code>Paid at Counter</code> ya <code>Unpaid (Bank Challan)</code>.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-0 bg-light p-3 rounded-3 h-100">
+                            <h6 class="fw-bold text-dark"><i class="fa fa-file-signature text-primary me-1"></i> 2. Admission Form Se Token Auto-Link</h6>
+                            <p class="small text-muted mb-2">
+                                <code>/students/printAdmission</code> ke top par <strong>`[ 🎟️ Fee Token / Challan ]`</strong> button dabayein.
+                            </p>
+                            <ul class="small text-muted ps-3 mb-0">
+                                <li>Candidate ka naam, walid ka naam aur class form se auto pre-fill hotay hain.</li>
+                                <li>Token generate hotay hi Section G ke <code>Challan #: ________</code> me auto fill ho jata hai!</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-light border mt-3 p-3 rounded-3">
+                    <h6 class="fw-bold text-dark mb-1"><i class="fa fa-receipt text-warning me-2"></i>Dual-Copy Authentic Voucher Slip:</h6>
+                    <p class="small text-muted mb-0">
+                        Token generate hone par screen par <strong>Official Dual-Copy Slip (Office Copy + Student Copy)</strong> aati hai jisme School Header, Unique Token # (e.g. <code>TKN-ADM-2026-0042</code>), Candidate Data, Itemized Heads, Paid Stamp aur Authorized Signatures shamil hotay hain jo 1-click se print ho jati hai.
+                    </p>
+                </div>
+            </div>
+
+            <!-- SECTION 6: COLLECTION REGISTER -->
+            <div class="doc-card" id="collect-hub">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                    <div>
+                        <span class="badge bg-success text-white mb-1" style="font-size: 0.72rem;">SECTION 6</span>
+                        <h3 class="fw-bold mb-0">Fee Register &amp; Live Counter Collection</h3>
+                    </div>
+                    <a href="/school/fees/collect" target="_blank" class="quick-btn btn-outline-success border">
+                        <i class="fa fa-cash-register me-1"></i> Open Fee Register
+                    </a>
+                </div>
+
+                <p class="text-muted small">
+                    <code>/fees/collect</code> school ka primary counter billing interface hai jo bina page reload kiye (zero freeze) tezi se kaam karta hai:
+                </p>
+
+                <div class="row g-2 small">
+                    <div class="col-md-4">
+                        <div class="border p-2.5 rounded-3 bg-light">
+                            <strong>1. Live Runtime Filter:</strong> Class aur Section change karne par table AJAX ke zariye instant update hoti hai.
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border p-2.5 rounded-3 bg-light">
+                            <strong>2. In-Place Payment Modal:</strong> Kisi bhi student ke aagay `Collect` click karne par bina page refresh kiye popup khulta hai.
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border p-2.5 rounded-3 bg-light">
+                            <strong>3. Fast Thermal Receipt:</strong> Payment save hotay hi official receipt print modal samne aa jata hai.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 7: 3-COPY BANK CHALLAN -->
+            <div class="doc-card" id="challan-bank">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                    <div>
+                        <span class="badge bg-secondary text-white mb-1" style="font-size: 0.72rem;">SECTION 7</span>
+                        <h3 class="fw-bold mb-0">3-Copy Bank Challan Hub (`/fees/challan`)</h3>
+                    </div>
+                    <a href="/school/fees/challan" target="_blank" class="quick-btn btn-outline-secondary border">
+                        <i class="fa fa-university me-1"></i> Open Challan Hub
+                    </a>
+                </div>
+
+                <p class="text-muted small">
+                    Pakistani standard ke mutabiq har student ka authentic <strong>3-Copy Bank Challan</strong> generate hota hai:
+                </p>
+                <div class="row g-2 text-center small mb-3">
+                    <div class="col-4">
+                        <div class="p-2 border rounded-3 bg-light fw-bold text-primary">1. Bank Copy (بینک کاپی)</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-2 border rounded-3 bg-light fw-bold text-success">2. School Copy (سکول کاپی)</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-2 border rounded-3 bg-light fw-bold text-dark">3. Student Copy (طلبہ کاپی)</div>
+                    </div>
+                </div>
+                <p class="text-muted small mb-0">
+                    Challan par verified Bank Account Title, Account No, IBAN (HBL / 1Link), Automated Late Fine, Barcode aur Due Date shamil hoti hai.
+                </p>
+            </div>
+
+            <!-- SECTION 8: DEFAULTERS AGING LEDGER -->
+            <div class="doc-card" id="defaulters">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                    <div>
+                        <span class="badge bg-danger text-white mb-1" style="font-size: 0.72rem;">SECTION 8</span>
+                        <h3 class="fw-bold mb-0">Defaulters Ledger &amp; Aging Brackets</h3>
+                    </div>
+                    <a href="/school/fees/defaulters" target="_blank" class="quick-btn btn-outline-danger border">
+                        <i class="fa fa-user-clock me-1"></i> Open Defaulters
+                    </a>
+                </div>
+
+                <p class="text-muted small">
+                    <code>/fees/defaulters</code> unpaid balances ko 4 dynamic aging brackets me categorize karta hai:
+                </p>
+                <div class="row g-2 text-center small mb-3">
+                    <div class="col-md-3">
+                        <div class="border p-2 rounded-3 bg-light">
+                            <span class="badge bg-warning text-dark mb-1">1 - 30 Days</span>
+                            <div class="small text-muted">First Notice / SMS</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border p-2 rounded-3 bg-light">
+                            <span class="badge bg-warning-subtle text-dark border mb-1">31 - 60 Days</span>
+                            <div class="small text-muted">Second Reminder</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border p-2 rounded-3 bg-light">
+                            <span class="badge bg-danger-subtle text-danger border mb-1">61 - 90 Days</span>
+                            <div class="small text-muted">Final Warning</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border p-2 rounded-3 bg-light">
+                            <span class="badge bg-danger text-white mb-1">90+ Days Overdue</span>
+                            <div class="small text-muted">Critical Defaulter</div>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-muted small mb-0">
+                    Defaulters ledger se 1-click par formal <strong>Warning Notice Slip</strong> (<code>/fees/printNotice/{id}</code>) print ki ja sakti hai.
+                </p>
+            </div>
+
+            <!-- SECTION 9: ACCOUNTING INTEGRATION -->
+            <div class="doc-card" id="integration">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                    <div>
+                        <span class="badge bg-primary text-white mb-1" style="font-size: 0.72rem;">SECTION 9</span>
+                        <h3 class="fw-bold mb-0">Automatic Accounting &amp; Ledger Integration</h3>
+                    </div>
+                </div>
+
+                <p class="text-muted small">
+                    System me fees collection alag island nahi hai balkay Accounting Module ke sath mukammal integrated hai:
+                </p>
+                <div class="bg-light p-3 rounded-3 border">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="fa fa-sync-alt text-success fs-5"></i>
+                        <strong class="text-dark">Auto-Sync Protocol (`Income::syncFeePayment`):</strong>
+                    </div>
+                    <p class="small text-muted mb-0">
+                        Jaise hi cashier kisi student ki fee receive karta hai (ya admission token mark paid hota hai), backend controller automatically accounting ledger ke table <code>incomes</code> me entry pass kar deta hai. Is se Accounts Officer ko manual double-entry nahi karni parti aur School Income &amp; Expense balance sheet hamesha 100% verified rehti hai.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- FOOTER -->
+<div class="bg-dark text-white py-4 border-top">
+    <div class="container text-center">
+        <div class="small text-white-50">
+            School Management System &bull; Enterprise Fees &amp; Admission Architecture &bull; Official Documentation
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Smooth scroll for sidebar links
+    document.querySelectorAll('.sidebar-nav a').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href');
+            const target = document.querySelector(targetId);
+            if(target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
+                this.classList.add('active');
+            }
+        });
+    });
+</script>
+</body>
+</html>
