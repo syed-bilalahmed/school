@@ -83,6 +83,7 @@ $livechatCustomScript = $siteSettings['livechat_custom_script'] ?? '';
                     <li class="footer-link-item"><a href="<?php echo URLROOT; ?>/home/academics"><i class="fa fa-chevron-right fa-xs"></i> Academics</a></li>
                     <li class="footer-link-item"><a href="<?php echo URLROOT; ?>/home/facilities"><i class="fa fa-chevron-right fa-xs"></i> Campus Life</a></li>
                     <li class="footer-link-item"><a href="<?php echo URLROOT; ?>/home/fees"><i class="fa fa-chevron-right fa-xs"></i> Tuition &amp; Fees</a></li>
+                    <li class="footer-link-item"><a href="<?php echo URLROOT; ?>/home/challan"><i class="fa fa-chevron-right fa-xs"></i> Bank Fee Challan</a></li>
                     <li class="footer-link-item"><a href="<?php echo URLROOT; ?>/home/events"><i class="fa fa-chevron-right fa-xs"></i> Events &amp; News</a></li>
                     <li class="footer-link-item"><a href="<?php echo URLROOT; ?>/home/gallery"><i class="fa fa-chevron-right fa-xs"></i> Gallery</a></li>
                     <li class="footer-link-item"><a href="<?php echo URLROOT; ?>/home/alumni"><i class="fa fa-chevron-right fa-xs"></i> Alumni</a></li>
@@ -90,6 +91,7 @@ $livechatCustomScript = $siteSettings['livechat_custom_script'] ?? '';
                     <li class="footer-link-item"><a href="<?php echo URLROOT; ?>/home/contact"><i class="fa fa-chevron-right fa-xs"></i> Contact Us</a></li>
                     <?php if(($data['cms']->enable_online_admission ?? 'yes') === 'yes'): ?>
                         <li class="footer-link-item"><a href="<?php echo URLROOT; ?>/home/admission"><i class="fa fa-chevron-right fa-xs"></i> Online Admission</a></li>
+                        <li class="footer-link-item"><a href="<?php echo URLROOT; ?>/home/track_admission"><i class="fa fa-chevron-right fa-xs"></i> Track Application</a></li>
                     <?php endif; ?>
                 </ul>
             </div>
@@ -227,16 +229,6 @@ $wpDirectUrl = "https://api.whatsapp.com/send?phone=" . urlencode($cleanWpNumber
             <span class="comm-fab-tooltip">Chat on WhatsApp</span>
         </a>
     <?php endif; ?>
-
-    <?php if ($isLivechatEnabled && $livechatProvider === 'builtin'): ?>
-        <!-- 3. Floating Live Chat Support Assistant Button -->
-        <button type="button" class="comm-fab-btn livechat-fab-btn" id="livechatFabBtn" aria-label="Open Live Chat Support" title="Live Support">
-            <div class="comm-pulse-ring"></div>
-            <i class="fa fa-comment-dots" id="livechatFabIcon"></i>
-            <span class="comm-online-dot"></span>
-            <span class="comm-fab-tooltip">Live Support</span>
-        </button>
-    <?php endif; ?>
 </div>
 
 <?php if ($isWhatsAppEnabled && $wpPopupEnabled): ?>
@@ -289,123 +281,9 @@ $wpDirectUrl = "https://api.whatsapp.com/send?phone=" . urlencode($cleanWpNumber
     </div>
 <?php endif; ?>
 
-<?php if ($isLivechatEnabled && $livechatProvider === 'builtin'): ?>
-    <!-- LIVE CHAT INTERACTIVE SCHOOL SUPPORT WINDOW -->
-    <div class="livechat-support-window" id="livechatSupportWindow" aria-hidden="true">
-        <div class="livechat-header">
-            <div class="d-flex align-items-center gap-2">
-                <div class="livechat-avatar-wrap">
-                    <i class="fa fa-graduation-cap"></i>
-                    <span class="online-indicator"></span>
-                </div>
-                <div>
-                    <h6 class="mb-0 fw-bold fs-6 text-white"><?php echo htmlspecialchars($livechatTitle, ENT_QUOTES, 'UTF-8'); ?></h6>
-                    <small class="text-white-50" style="font-size: 0.72rem;">
-                        <i class="fa fa-bolt text-warning me-1"></i>Automated Campus Assistant &bull; 24/7
-                    </small>
-                </div>
-            </div>
-            <div class="livechat-header-actions d-flex align-items-center gap-1">
-                <button type="button" id="livechatCallbackToggleBtn" title="Request Counselor Callback" class="me-1" aria-label="Request Callback">
-                    <i class="fa fa-phone-alt"></i>
-                </button>
-                <button type="button" id="livechatCloseBtn" aria-label="Close Live Chat">
-                    <i class="fa fa-times"></i>
-                </button>
-            </div>
-        </div>
-
-        <!-- Inline Callback / Lead Drawer (Toggleable) -->
-        <div class="livechat-enquiry-drawer" id="livechatEnquiryDrawer">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="fw-bold text-dark small"><i class="fa fa-user-edit text-primary me-1"></i>Request Admissions Officer Callback</span>
-                <button type="button" class="btn-close btn-close-sm" id="livechatCloseDrawerBtn" style="font-size: 0.65rem;" aria-label="Close"></button>
-            </div>
-            <form id="livechatEnquiryForm">
-                <div class="row g-2">
-                    <div class="col-6">
-                        <input type="text" id="chatLeadName" class="form-control form-control-sm" placeholder="Your Full Name *" required>
-                    </div>
-                    <div class="col-6">
-                        <input type="tel" id="chatLeadPhone" class="form-control form-control-sm" placeholder="Mobile / WhatsApp *" required>
-                    </div>
-                    <div class="col-12">
-                        <input type="email" id="chatLeadEmail" class="form-control form-control-sm" placeholder="Email Address (Optional)">
-                    </div>
-                    <div class="col-12 d-flex justify-content-end">
-                        <button type="submit" class="btn btn-primary btn-sm px-3 fw-bold" id="chatLeadSubmitBtn" style="font-size: 0.75rem;">
-                            <i class="fa fa-paper-plane me-1"></i>Submit Callback Request
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>
-
-        <!-- Messages Flow Stream -->
-        <div class="livechat-messages-container" id="livechatMessagesStream">
-            <!-- Initial Welcome Bubble -->
-            <div class="chat-bubble bot-bubble">
-                <div class="fw-bold text-primary mb-1" style="font-size: 0.78rem;">
-                    <?php echo htmlspecialchars($schoolName, ENT_QUOTES, 'UTF-8'); ?> Assistant
-                </div>
-                <div><?php echo nl2br(htmlspecialchars($livechatMsg, ENT_QUOTES, 'UTF-8')); ?></div>
-                <div class="chat-quick-replies-tray mt-2">
-                    <button type="button" class="chat-reply-chip" data-query="How to apply for online admission?">🎓 How to Apply</button>
-                    <button type="button" class="chat-reply-chip" data-query="Tuition fee details and payment methods">💳 Fee Details</button>
-                    <button type="button" class="chat-reply-chip" data-query="School timings and office hours">⏰ School Timings</button>
-                    <button type="button" class="chat-reply-chip" data-query="Campus location and directions">📍 Campus Location</button>
-                    <button type="button" class="chat-reply-chip chat-urgent-chip text-danger fw-bold" data-query="Urgent: Talk to team member / رابطہ فوری"><i class="fa fa-bolt me-1 text-danger"></i>🚨 Urgent Help / رابطہ کونسلر</button>
-                </div>
-                <span class="chat-time-tag text-muted"><?php echo date('h:i A'); ?></span>
-            </div>
-
-            <!-- Typing Indicator Element -->
-            <div class="chat-typing-dots" id="chatTypingDots">
-                <span></span><span></span><span></span>
-            </div>
-        </div>
-
-        <!-- Bottom Input Bar -->
-        <div class="livechat-input-bar">
-            <input type="text" id="livechatUserInput" class="livechat-input-field" placeholder="Ask about admissions, fee, timings..." autocomplete="off">
-            <button type="button" id="livechatSendBtn" class="livechat-send-btn" title="Send Question" aria-label="Send">
-                <i class="fa fa-paper-plane" style="font-size: 0.9rem;"></i>
-            </button>
-        </div>
-    </div>
-<?php endif; ?>
-
-<?php if ($isLivechatEnabled && $livechatProvider === 'tawk' && !empty($livechatTawkProp) && !empty($livechatTawkWidget)): ?>
-    <!-- TAWK.TO RUNTIME INJECTION -->
-    <script type="text/javascript">
-    var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-    (function(){
-    var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-    s1.async=true;
-    s1.src='https://embed.tawk.to/<?php echo htmlspecialchars($livechatTawkProp, ENT_QUOTES, 'UTF-8'); ?>/<?php echo htmlspecialchars($livechatTawkWidget, ENT_QUOTES, 'UTF-8'); ?>';
-    s1.charset='UTF-8';
-    s1.setAttribute('crossorigin','*');
-    s0.parentNode.insertBefore(s1,s0);
-    })();
-    </script>
-<?php endif; ?>
-
-<?php if ($isLivechatEnabled && $livechatProvider === 'crisp' && !empty($livechatCrispId)): ?>
-    <!-- CRISP RUNTIME INJECTION -->
-    <script type="text/javascript">
-    window.$crisp=[];window.CRISP_WEBSITE_ID="<?php echo htmlspecialchars($livechatCrispId, ENT_QUOTES, 'UTF-8'); ?>";
-    (function(){d=document;s=d.createElement("script");s.src="https://client.crisp.chat/l.js";s.async=1;d.getElementsByTagName("head")[0].appendChild(s);})();
-    </script>
-<?php endif; ?>
-
-<?php if ($isLivechatEnabled && $livechatProvider === 'custom' && !empty($livechatCustomScript)): ?>
-    <!-- CUSTOM CHAT RUNTIME SCRIPT -->
-    <?php echo $livechatCustomScript; ?>
-<?php endif; ?>
-
 <!-- Bootstrap Bundle JS & Animation Handlers -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // 1. Initialize AOS (Animate On Scroll)
@@ -472,26 +350,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // =========================================================================
-    // 4. FLOATING WHATSAPP & LIVE CHAT INTERACTIVE LOGIC
+    // 4. FLOATING WHATSAPP INTERACTIVE LOGIC
     // =========================================================================
     const wpFabBtn = document.getElementById('whatsappFabBtn');
     const wpPopup = document.getElementById('whatsappChatPopup');
     const wpCloseBtn = document.getElementById('whatsappCloseBtn');
     const wpSendBtn = document.getElementById('whatsappSendBtn');
     const wpCustomInput = document.getElementById('whatsappCustomInput');
-
-    const livechatFabBtn = document.getElementById('livechatFabBtn');
-    const livechatWindow = document.getElementById('livechatSupportWindow');
-    const livechatCloseBtn = document.getElementById('livechatCloseBtn');
-    const livechatFabIcon = document.getElementById('livechatFabIcon');
-    const livechatSendBtn = document.getElementById('livechatSendBtn');
-    const livechatInput = document.getElementById('livechatUserInput');
-    const livechatStream = document.getElementById('livechatMessagesStream');
-    const livechatTyping = document.getElementById('chatTypingDots');
-    const callbackToggleBtn = document.getElementById('livechatCallbackToggleBtn');
-    const callbackDrawer = document.getElementById('livechatEnquiryDrawer');
-    const closeDrawerBtn = document.getElementById('livechatCloseDrawerBtn');
-    const callbackForm = document.getElementById('livechatEnquiryForm');
 
     // WhatsApp Popup Toggle
     if (wpFabBtn && wpPopup) {
@@ -503,13 +368,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     wpPopup.classList.remove('active');
                 } else {
                     wpPopup.classList.add('active');
-                    if (livechatWindow) {
-                        livechatWindow.classList.remove('active');
-                        if (livechatFabBtn) livechatFabBtn.classList.remove('active-chat');
-                        if (livechatFabIcon) {
-                            livechatFabIcon.className = 'fa fa-comment-dots';
-                        }
-                    }
                     if (wpCustomInput) wpCustomInput.focus();
                 }
             }
@@ -533,7 +391,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // WhatsApp Send Custom Input
     function dispatchWhatsAppMsg(msg) {
-        const cleanNumber = wpFabBtn ? wpFabBtn.getAttribute('data-number') : '923001234567';
+        const cleanNumber = wpFabBtn ? wpFabBtn.getAttribute('data-number') : '923360606905';
         const finalMsg = msg || (wpCustomInput ? wpCustomInput.value : '');
         const targetUrl = 'https://api.whatsapp.com/send?phone=' + encodeURIComponent(cleanNumber) + '&text=' + encodeURIComponent(finalMsg);
         window.open(targetUrl, '_blank');
@@ -551,229 +409,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.preventDefault();
                 dispatchWhatsAppMsg();
             }
-        });
-    }
-
-    // Live Chat Window Toggle
-    if (livechatFabBtn && livechatWindow) {
-        livechatFabBtn.addEventListener('click', function() {
-            const isOpen = livechatWindow.classList.contains('active');
-            if (isOpen) {
-                livechatWindow.classList.remove('active');
-                livechatFabBtn.classList.remove('active-chat');
-                if (livechatFabIcon) livechatFabIcon.className = 'fa fa-comment-dots';
-            } else {
-                livechatWindow.classList.add('active');
-                livechatFabBtn.classList.add('active-chat');
-                if (livechatFabIcon) livechatFabIcon.className = 'fa fa-times';
-                if (wpPopup) wpPopup.classList.remove('active');
-                if (livechatInput) livechatInput.focus();
-                scrollChatToBottom();
-            }
-        });
-    }
-
-    if (livechatCloseBtn && livechatWindow) {
-        livechatCloseBtn.addEventListener('click', function() {
-            livechatWindow.classList.remove('active');
-            if (livechatFabBtn) livechatFabBtn.classList.remove('active-chat');
-            if (livechatFabIcon) livechatFabIcon.className = 'fa fa-comment-dots';
-        });
-    }
-
-    function scrollChatToBottom() {
-        if (livechatStream) {
-            livechatStream.scrollTop = livechatStream.scrollHeight;
-        }
-    }
-
-    function formatTimeNow() {
-        const d = new Date();
-        let h = d.getHours();
-        const m = String(d.getMinutes()).padStart(2, '0');
-        const ampm = h >= 12 ? 'PM' : 'AM';
-        h = h % 12;
-        h = h ? h : 12;
-        return h + ':' + m + ' ' + ampm;
-    }
-
-    // Send Message to Live Chat API
-    function sendLiveChatMessage(messageText) {
-        const text = (messageText || (livechatInput ? livechatInput.value : '')).trim();
-        if (!text || !livechatStream) return;
-
-        // Append User Bubble
-        const userBubble = document.createElement('div');
-        userBubble.className = 'chat-bubble user-bubble';
-        userBubble.innerHTML = '<div>' + escapeHtml(text) + '</div><span class="chat-time-tag">' + formatTimeNow() + '</span>';
-        
-        if (livechatTyping) {
-            livechatStream.insertBefore(userBubble, livechatTyping);
-        } else {
-            livechatStream.appendChild(userBubble);
-        }
-
-        if (livechatInput) livechatInput.value = '';
-        if (livechatTyping) livechatTyping.classList.add('active');
-        scrollChatToBottom();
-
-        // Call Runtime API
-        const apiUrl = '<?php echo URLROOT; ?>/home/livechatApi';
-        fetch(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: 'action=query&message=' + encodeURIComponent(text)
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (livechatTyping) livechatTyping.classList.remove('active');
-            
-            const botBubble = document.createElement('div');
-            botBubble.className = 'chat-bubble bot-bubble';
-
-            let botHtml = '<div>' + (data.reply || 'Thank you for reaching out! How else can I assist you?') + '</div>';
-
-            if (data.quick_replies && data.quick_replies.length > 0) {
-                botHtml += '<div class="chat-quick-replies-tray mt-2">';
-                data.quick_replies.forEach(chipText => {
-                    botHtml += '<button type="button" class="chat-reply-chip" data-query="' + escapeHtml(chipText) + '">' + escapeHtml(chipText) + '</button>';
-                });
-                botHtml += '</div>';
-            }
-
-            botHtml += '<span class="chat-time-tag text-muted">' + formatTimeNow() + '</span>';
-            botBubble.innerHTML = botHtml;
-
-            if (livechatTyping) {
-                livechatStream.insertBefore(botBubble, livechatTyping);
-            } else {
-                livechatStream.appendChild(botBubble);
-            }
-
-            scrollChatToBottom();
-        })
-        .catch(err => {
-            console.error('Chat API error:', err);
-            if (livechatTyping) livechatTyping.classList.remove('active');
-            
-            const errBubble = document.createElement('div');
-            errBubble.className = 'chat-bubble bot-bubble text-danger';
-            errBubble.innerHTML = '<div>Our admissions counselor is standing by on WhatsApp. Feel free to click the WhatsApp button to chat directly!</div><span class="chat-time-tag text-muted">' + formatTimeNow() + '</span>';
-            if (livechatTyping) {
-                livechatStream.insertBefore(errBubble, livechatTyping);
-            } else {
-                livechatStream.appendChild(errBubble);
-            }
-            scrollChatToBottom();
-        });
-    }
-
-    function escapeHtml(str) {
-        return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
-    }
-
-    if (livechatSendBtn) {
-        livechatSendBtn.addEventListener('click', function() {
-            sendLiveChatMessage();
-        });
-    }
-    if (livechatInput) {
-        livechatInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                sendLiveChatMessage();
-            }
-        });
-    }
-
-    // Delegated click for dynamic Quick Reply Chips in Chat Stream
-    if (livechatStream) {
-        livechatStream.addEventListener('click', function(e) {
-            const chip = e.target.closest('.chat-reply-chip');
-            if (chip) {
-                const query = chip.getAttribute('data-query');
-                if (query) {
-                    if (query.includes('WhatsApp') || query.includes('Open WhatsApp')) {
-                        dispatchWhatsAppMsg('Hello! I would like to connect directly with an Admissions Officer.');
-                    } else if (query.includes('Callback') || query.includes('Request callback')) {
-                        if (callbackDrawer) callbackDrawer.classList.add('active');
-                    } else {
-                        sendLiveChatMessage(query);
-                    }
-                }
-            }
-        });
-    }
-
-    // Callback Drawer Handlers
-    if (callbackToggleBtn && callbackDrawer) {
-        callbackToggleBtn.addEventListener('click', function() {
-            callbackDrawer.classList.toggle('active');
-        });
-    }
-    if (closeDrawerBtn && callbackDrawer) {
-        closeDrawerBtn.addEventListener('click', function() {
-            callbackDrawer.classList.remove('active');
-        });
-    }
-
-    if (callbackForm) {
-        callbackForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const nameInput = document.getElementById('chatLeadName');
-            const phoneInput = document.getElementById('chatLeadPhone');
-            const emailInput = document.getElementById('chatLeadEmail');
-            const submitBtn = document.getElementById('chatLeadSubmitBtn');
-
-            if (!nameInput || !phoneInput) return;
-            const name = nameInput.value.trim();
-            const phone = phoneInput.value.trim();
-            const email = emailInput ? emailInput.value.trim() : '';
-
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin me-1"></i>Submitting...';
-            }
-
-            const apiUrl = '<?php echo URLROOT; ?>/home/livechatApi';
-            fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: 'action=submit_enquiry&name=' + encodeURIComponent(name) + '&phone=' + encodeURIComponent(phone) + '&email=' + encodeURIComponent(email) + '&message=' + encodeURIComponent('Live Chat Callback Request')
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fa fa-paper-plane me-1"></i>Submit Callback Request';
-                }
-                if (callbackDrawer) callbackDrawer.classList.remove('active');
-                callbackForm.reset();
-
-                // Append Confirmation Bubble
-                const confBubble = document.createElement('div');
-                confBubble.className = 'chat-bubble bot-bubble bg-success text-white border-0';
-                confBubble.innerHTML = '<div><i class="fa fa-check-circle me-1"></i> ' + (data.message || 'Thank you! Your callback request has been logged. Our admissions counselor will call you shortly.') + '</div><span class="chat-time-tag text-white-50">' + formatTimeNow() + '</span>';
-                if (livechatTyping) {
-                    livechatStream.insertBefore(confBubble, livechatTyping);
-                } else {
-                    livechatStream.appendChild(confBubble);
-                }
-                scrollChatToBottom();
-            })
-            .catch(err => {
-                console.error('Callback error:', err);
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fa fa-paper-plane me-1"></i>Submit Callback Request';
-                }
-                alert('Could not submit callback request. Please contact us directly on WhatsApp or phone.');
-            });
         });
     }
 
@@ -798,61 +433,33 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+
+    // 5. Instant Navigation Prefetcher (Instant Page Transitions)
+    const prefetchedLinks = new Set();
+    function prefetchInternalLink(url) {
+        if (!url || prefetchedLinks.has(url)) return;
+        if (url.includes('#') || url.startsWith('javascript:') || url.startsWith('mailto:') || url.startsWith('tel:') || url.includes('api.whatsapp.com')) return;
+        try {
+            const dest = new URL(url, window.location.href);
+            if (dest.origin !== window.location.origin) return;
+            prefetchedLinks.add(url);
+            const linkEl = document.createElement('link');
+            linkEl.rel = 'prefetch';
+            linkEl.href = url;
+            linkEl.as = 'document';
+            document.head.appendChild(linkEl);
+        } catch(e) {}
+    }
+
+    document.addEventListener('mouseover', function(e) {
+        const a = e.target.closest('a');
+        if (a && a.href) prefetchInternalLink(a.href);
+    }, { passive: true });
+
+    document.addEventListener('touchstart', function(e) {
+        const a = e.target.closest('a');
+        if (a && a.href) prefetchInternalLink(a.href);
+    }, { passive: true });
 });
-
-// Global Mobile Live Chat Trigger
-window.triggerMobileLiveChat = function() {
-    const livechatFab = document.getElementById('livechatFabBtn');
-    if (livechatFab) {
-        livechatFab.click();
-    } else {
-        const win = document.getElementById('livechatWindow');
-        if (win) win.classList.add('active');
-    }
-};
-
-// Global Inline Callback Submitter (Inside Urgent Chat Bubble)
-window.submitInlineCallback = function(btn) {
-    const box = btn.closest('.chat-callback-box');
-    if (!box) return;
-    const nameInput = box.querySelector('#inlineCallbackName');
-    const phoneInput = box.querySelector('#inlineCallbackPhone');
-    const msgDiv = box.querySelector('#inlineCallbackMsg');
-
-    const name = nameInput ? nameInput.value.trim() : '';
-    const phone = phoneInput ? phoneInput.value.trim() : '';
-
-    if (!name || !phone) {
-        alert('براہِ کرم اپنا نام اور فون نمبر درج کریں۔\nPlease enter your name and phone number.');
-        return;
-    }
-
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
-
-    const apiUrl = '<?php echo URLROOT; ?>/home/livechatApi';
-    fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'action=submit_enquiry&priority=Urgent&name=' + encodeURIComponent(name) + '&phone=' + encodeURIComponent(phone) + '&message=' + encodeURIComponent('Urgent bot escalation callback request')
-    })
-    .then(res => res.json())
-    .then(data => {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fa fa-check"></i> Sent';
-        btn.className = 'btn btn-sm btn-success fw-bold';
-        if (nameInput) nameInput.disabled = true;
-        if (phoneInput) phoneInput.disabled = true;
-        if (msgDiv) {
-            msgDiv.style.display = 'block';
-            msgDiv.innerHTML = '<i class="fa fa-check-circle me-1"></i> شکریہ ' + name + '! آپ کی ارجنٹ درخواست موصول ہو گئی ہے۔ کونسلر فوراً رابطہ کرے گا۔';
-        }
-    })
-    .catch(() => {
-        btn.disabled = false;
-        btn.innerHTML = 'Submit';
-        alert('Network error. Please call helpline directly: <?php echo htmlspecialchars($schoolPhone); ?>');
-    });
-};
 </script>
 

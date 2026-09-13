@@ -92,6 +92,11 @@ elseif ($theme === 'dark') $themeColor = '#0f172a';
                 <p class="inner-page-subtitle">
                     Embark on a voyage of educational distinction. Complete your student's profile across 3 simple steps.
                 </p>
+                <div class="mt-3">
+                    <a href="<?php echo URLROOT; ?>/home/track_admission" class="btn btn-sm btn-outline-light rounded-pill px-3 fw-semibold">
+                        <i class="fa fa-search me-1"></i> Already Applied? Track Application Status
+                    </a>
+                </div>
             </div>
         </div>
     </header>
@@ -121,6 +126,9 @@ elseif ($theme === 'dark') $themeColor = '#0f172a';
                                     <i class="fa fa-clipboard-check me-2"></i>View Required Documents Checklist
                                 </button>
                                 <?php if(!empty($data['submitted_application']['id'])): ?>
+                                    <a href="<?php echo URLROOT; ?>/home/track_admission?ref=<?php echo (int)$data['submitted_application']['id']; ?>&phone=<?php echo urlencode($data['submitted_application']['phone'] ?? ''); ?>" class="btn btn-outline-primary rounded-pill px-4 fw-bold">
+                                        <i class="fa fa-radar me-1"></i> Track Status Live
+                                    </a>
                                     <a href="<?php echo URLROOT; ?>/frontoffice/printAdmissionForm/<?php echo (int)$data['submitted_application']['id']; ?>" target="_blank" class="btn btn-outline-dark rounded-pill px-4 fw-bold">
                                         <i class="fa fa-print me-1"></i> Print / Download Form
                                     </a>

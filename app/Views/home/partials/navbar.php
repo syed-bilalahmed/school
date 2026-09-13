@@ -274,6 +274,8 @@ $noticeCount = is_array($publicNotices) ? count($publicNotices) : 0;
     0% { opacity: 1; transform: scale(1.2); background-color: #22c55e; box-shadow: 0 0 10px #22c55e; }
     50% { opacity: 0.2; transform: scale(0.65); }
     100% { opacity: 1; transform: scale(1.2); background-color: #eab308; box-shadow: 0 0 10px #eab308; }
+}
+
 .emergency-alert-bar {
     position: relative;
     width: 100%;
@@ -464,7 +466,7 @@ $noticeCount = is_array($publicNotices) ? count($publicNotices) : 0;
             }
         }
 
-        $isExploreActive = in_array($activePage, ['facilities', 'fees', 'gallery', 'alumni', 'requirements']);
+        $isExploreActive = in_array($activePage, ['facilities', 'fees', 'challan', 'track_admission', 'gallery', 'alumni', 'requirements']);
         ?>
         <div class="collapse navbar-collapse" id="navbarFrontNav">
             <ul class="navbar-nav ms-auto align-items-lg-center gap-1">
@@ -479,8 +481,11 @@ $noticeCount = is_array($publicNotices) ? count($publicNotices) : 0;
                             Academics <i class="fa fa-chevron-down ms-1" style="font-size: 0.65rem;"></i>
                         </a>
                         <ul class="dropdown-menu shadow-lg border-0 py-2" aria-labelledby="navDropdownAcademics">
-                            <li><a class="dropdown-item <?php echo ($activePage === 'academics') ? 'active' : ''; ?>" href="<?php echo URLROOT; ?>/home/academics"><i class="fa fa-book-open me-2 text-primary"></i> Academics Overview</a></li>
-                            <li><hr class="dropdown-divider my-1"></li>
+                            <li>
+                                <a class="dropdown-item <?php echo ($activePage === 'academics') ? 'active' : ''; ?>" href="<?php echo URLROOT; ?>/home/academics">
+                                    <i class="fa fa-graduation-cap me-2 text-primary"></i> Curriculum &amp; Academic Programs
+                                </a>
+                            </li>
                             <?php foreach($academicsSubMenus as $am): ?>
                                 <li>
                                     <a class="dropdown-item <?php echo ($activePage === ($am->page_slug ?? '')) ? 'active' : ''; ?>" href="<?php echo ($am->page_id > 0) ? URLROOT . '/home/page/' . $am->page_slug : $am->link; ?>">
@@ -496,7 +501,7 @@ $noticeCount = is_array($publicNotices) ? count($publicNotices) : 0;
                     </li>
                 <?php endif; ?>
 
-                <!-- Explore / Campus Life Dropdown (Consolidates Campus Life, Fees, Gallery, Alumni, Requirements) -->
+                <!-- Luxury Explore Dropdown (Campus Life, Fees, Tracking, Gallery, Alumni, Requirements) -->
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle <?php echo $isExploreActive ? 'active' : ''; ?>" href="#" id="navDropdownExplore" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         Explore <i class="fa fa-chevron-down ms-1" style="font-size: 0.65rem;"></i>
@@ -510,10 +515,20 @@ $noticeCount = is_array($publicNotices) ? count($publicNotices) : 0;
                         <?php if(($data['cms']->enable_fee_structure ?? 'yes') === 'yes'): ?>
                             <li>
                                 <a class="dropdown-item <?php echo ($activePage === 'fees') ? 'active' : ''; ?>" href="<?php echo URLROOT; ?>/home/fees">
-                                    <i class="fa fa-receipt me-2 text-success"></i> Tuition &amp; Fee Structure
+                                    <i class="fa fa-calculator me-2 text-success"></i> Tuition &amp; Fee Structure
                                 </a>
                             </li>
                         <?php endif; ?>
+                        <li>
+                            <a class="dropdown-item <?php echo ($activePage === 'challan') ? 'active' : ''; ?>" href="<?php echo URLROOT; ?>/home/challan">
+                                <i class="fa fa-receipt me-2 text-warning"></i> Print Bank Fee Challan
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item <?php echo ($activePage === 'track_admission') ? 'active' : ''; ?>" href="<?php echo URLROOT; ?>/home/track_admission">
+                                <i class="fa fa-radar me-2 text-primary"></i> Track Admission Status
+                            </a>
+                        </li>
                         <li>
                             <a class="dropdown-item <?php echo ($activePage === 'gallery') ? 'active' : ''; ?>" href="<?php echo URLROOT; ?>/home/gallery">
                                 <i class="fa fa-camera-retro me-2 text-danger"></i> Photo Gallery

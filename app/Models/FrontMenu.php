@@ -2,20 +2,25 @@
 class FrontMenu {
     private $db;
 
+    private static $schemaChecked = false;
+
     public function __construct(){
         $this->db = new Database;
         $this->ensureTableSchema();
     }
 
     public function ensureTableSchema(){
+        if(self::$schemaChecked) return;
         try {
             $this->db->query("SHOW COLUMNS FROM front_menus LIKE 'dropdown_group'");
             if(!$this->db->single()){
                 $this->db->query("ALTER TABLE front_menus ADD COLUMN dropdown_group VARCHAR(50) DEFAULT 'none' AFTER sort_order");
                 $this->db->execute();
             }
+            self::$schemaChecked = true;
         } catch(Throwable $e){
             // Graceful fallback
+            self::$schemaChecked = true;
         }
     }
 

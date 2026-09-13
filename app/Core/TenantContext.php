@@ -161,4 +161,42 @@ class TenantContext {
             return null;
         }
     }
+
+    /**
+     * Retrieves the complete active school tenant object with fallback to SiteSetting
+     */
+    public static function getSchoolDetails() {
+        $schoolId = self::getSchoolId();
+        try {
+            $db = new Database();
+            $db->query("SELECT * FROM schools WHERE id = :id LIMIT 1");
+            $db->bind(':id', $schoolId);
+            $school = $db->single();
+            if ($school) {
+                return $school;
+            }
+        } catch (Exception $e) {}
+
+        // Fallback for single-tenant local environment
+        return (object)[
+            'id' => $schoolId,
+            'code' => self::getSchoolCode(),
+            'name' => defined('SITENAME') ? SITENAME : 'School Management System',
+            'domain' => null,
+            'status' => 'active'
+        ];
+    }
+
+    /**
+     * Get all active schools for school switcher or multi-tenant directory
+     */
+    public static function getAllActiveSchools() {
+        try {
+            $db = new Database();
+            $db->query("SELECT id, code, name, domain, status FROM schools WHERE status = 'active' ORDER BY id ASC");
+            return $db->resultSet();
+        } catch (Exception $e) {
+            return [];
+        }
+    }
 }

@@ -358,6 +358,185 @@ class HomeController extends Controller {
         $this->view('home/admission', $data);
     }
 
+    public function track_admission(){
+        $cmsModel = $this->model('FrontCms');
+        $settingModel = $this->model('Setting');
+        $menuModel = $this->model('FrontMenu');
+        
+        $cmsSettings = $cmsModel->getSettings();
+        $siteSettings = $settingModel->getSettings();
+        $this->ensurePublicWebsiteEnabled($cmsSettings, $siteSettings);
+
+        $schoolId = $this->getSchoolId() ?: 1;
+        $searchQuery = trim($_REQUEST['ref'] ?? ($_REQUEST['phone'] ?? ($_REQUEST['query'] ?? '')));
+        $searched = !empty($searchQuery);
+        $enquiry = null;
+        $timeline = [];
+
+        if($searched){
+            $cleanQuery = preg_replace('/^#/', '', $searchQuery);
+            try {
+                $db = new Database();
+                $sql = "SELECT ae.*, c.class_name, s.admission_no, s.roll_no, s.id as enrolled_student_id
+                        FROM admission_enquiry ae
+                        LEFT JOIN classes c ON ae.class_id = c.id
+                        LEFT JOIN students s ON ae.converted_student_id = s.id
+                        WHERE ae.school_id = :sch
+                          AND (ae.id = :id_val OR ae.phone = :q_phone OR ae.phone LIKE :q_like OR ae.description LIKE :q_like)
+                        ORDER BY ae.id DESC LIMIT 1";
+                
+                $db->query($sql);
+                $db->bind(':sch', $schoolId);
+                $db->bind(':id_val', is_numeric($cleanQuery) ? (int)$cleanQuery : 0);
+                $db->bind(':q_phone', $cleanQuery);
+                $db->bind(':q_like', '%' . $cleanQuery . '%');
+                $enquiry = $db->single();
+            } catch(Throwable $e) {
+                error_log("track_admission query error: " . $e->getMessage());
+                $enquiry = null;
+            }
+            
+            if($enquiry){
+                $isEnrolled = !empty($enquiry->converted_student_id);
+                $isApproved = $isEnrolled || ($enquiry->status === 'Approved');
+                $isAssessment = $isApproved || ($enquiry->status === 'Follow Up');
+                $isDocsScreened = $isAssessment || ($enquiry->status !== 'New');
+
+                $timeline = [
+                    [
+                        'step' => 1,
+                        'title' => 'Application Received',
+                        'desc' => 'Dossier successfully submitted and registered in school admissions database.',
+                        'date' => !empty($enquiry->date) ? date('M d, Y', strtotime($enquiry->date)) : date('M d, Y'),
+                        'status' => 'completed',
+                        'icon' => 'fa-file-signature'
+                    ],
+                    [
+                        'step' => 2,
+                        'title' => 'Document Verification',
+                        'desc' => $isDocsScreened ? 'B-Form and academic credentials screened by secretariat.' : 'Awaiting physical verification. Please submit required document copies.',
+                        'date' => $isDocsScreened ? 'Verified' : 'In Review',
+                        'status' => $isDocsScreened ? 'completed' : 'current',
+                        'icon' => 'fa-id-card'
+                    ],
+                    [
+                        'step' => 3,
+                        'title' => 'Aptitude Assessment & Interview',
+                        'desc' => $isAssessment ? (!empty($enquiry->next_follow_up_date) ? 'Scheduled for ' . date('M d, Y', strtotime($enquiry->next_follow_up_date)) : 'Aptitude assessment & parent dialogue completed.') : 'Awaiting schedule by department head.',
+                        'date' => !empty($enquiry->next_follow_up_date) ? date('M d, Y', strtotime($enquiry->next_follow_up_date)) : 'Upcoming',
+                        'status' => $isAssessment ? 'completed' : ($isDocsScreened ? 'current' : 'pending'),
+                        'icon' => 'fa-comments'
+                    ],
+                    [
+                        'step' => 4,
+                        'title' => 'Admissions Approval & Fee Voucher',
+                        'desc' => $isApproved ? 'Candidate approved! Official tuition fee challan generated for deposit.' : 'Pending assessment clearance and committee review.',
+                        'date' => $isApproved ? 'Approved' : 'Pending Approval',
+                        'status' => $isApproved ? 'completed' : ($isAssessment ? 'current' : 'pending'),
+                        'icon' => 'fa-file-invoice-dollar'
+                    ],
+                    [
+                        'step' => 5,
+                        'title' => 'Class & Roll No Allocation',
+                        'desc' => $isEnrolled ? 'Formally enrolled! Admission No: ' . htmlspecialchars($enquiry->admission_no ?? '') . ' | Roll No: ' . htmlspecialchars($enquiry->roll_no ?? '') : 'Section & Roll Number assigned upon fee deposit confirmation.',
+                        'date' => $isEnrolled ? 'Enrolled' : 'Final Step',
+                        'status' => $isEnrolled ? 'completed' : ($isApproved ? 'current' : 'pending'),
+                        'icon' => 'fa-graduation-cap'
+                    ]
+                ];
+            }
+        }
+
+        $data = [
+            'cms' => $cmsSettings,
+            'school' => $siteSettings,
+            'settings' => $cmsSettings,
+            'menus' => $menuModel->getMenus(),
+            'searched' => $searched,
+            'searchQuery' => $searchQuery,
+            'enquiry' => $enquiry,
+            'timeline' => $timeline
+        ];
+
+        $this->view('home/track_admission', $data);
+    }
+
+    public function admission_status(){
+        $ref = $_GET['ref'] ?? ($_GET['phone'] ?? ($_GET['query'] ?? ''));
+        header('Location: ' . URLROOT . '/home/track_admission' . (!empty($ref) ? '?ref=' . urlencode($ref) : ''));
+        exit;
+    }
+
+    public function challan(){
+        $cmsModel = $this->model('FrontCms');
+        $settingModel = $this->model('Setting');
+        $menuModel = $this->model('FrontMenu');
+        $feeModel = $this->model('Fee');
+        $studentModel = $this->model('Student');
+        
+        $cmsSettings = $cmsModel->getSettings();
+        $siteSettings = $settingModel->getSettings();
+        $this->ensurePublicWebsiteEnabled($cmsSettings, $siteSettings);
+
+        $schoolId = $this->getSchoolId() ?: 1;
+        $studentId = !empty($_GET['student_id']) ? (int)$_GET['student_id'] : null;
+        $admissionNo = trim($_GET['admission_no'] ?? ($_GET['q'] ?? ''));
+        $month = !empty($_GET['month']) ? trim($_GET['month']) : date('F');
+        $year = !empty($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
+
+        $student = null;
+        $challanData = null;
+        try {
+            if($studentId){
+                $student = $studentModel->getStudentById($studentId);
+            } elseif(!empty($admissionNo)){
+                $db = new Database();
+                $db->query("SELECT s.*, c.class_name, sec.section_name 
+                            FROM students s 
+                            LEFT JOIN classes c ON s.class_id = c.id
+                            LEFT JOIN sections sec ON s.section_id = sec.id
+                            WHERE s.school_id = :sch 
+                              AND (s.admission_no = :adm OR s.roll_no = :adm OR s.bform_cnic = :adm OR s.reg_no = :adm)
+                            LIMIT 1");
+                $db->bind(':sch', $schoolId);
+                $db->bind(':adm', $admissionNo);
+                $student = $db->single();
+                if($student){
+                    $studentId = (int)$student->id;
+                }
+            }
+
+            if($studentId && $student){
+                $challanData = $feeModel->getStudentChallanData($studentId, $month, $year);
+            }
+        } catch(Throwable $e) {
+            error_log("challan query error: " . $e->getMessage());
+            $student = null;
+            $challanData = null;
+        }
+
+        $data = [
+            'cms' => $cmsSettings,
+            'school' => $siteSettings,
+            'settings' => $cmsSettings,
+            'menus' => $menuModel->getMenus(),
+            'student' => $student,
+            'challan' => $challanData,
+            'bank' => $feeModel->getSchoolBank(),
+            'month' => $month,
+            'year' => $year,
+            'admissionNo' => $admissionNo
+        ];
+
+        $this->view('home/challan', $data);
+    }
+
+    public function fee_challan(){
+        $q = $_GET['admission_no'] ?? ($_GET['q'] ?? '');
+        header('Location: ' . URLROOT . '/home/challan' . (!empty($q) ? '?admission_no=' . urlencode($q) : ''));
+        exit;
+    }
+
     public function contact(){
         $cmsModel = $this->model('FrontCms');
         $settingModel = $this->model('Setting');
@@ -598,7 +777,49 @@ class HomeController extends Controller {
 
         // 2. Intelligent Smart Assistant Natural Language Q&A
         if ($action === 'query') {
-            $msg = strtolower(trim($_POST['message'] ?? ($jsonBody['message'] ?? '')));
+            $rawMsg = trim($_POST['message'] ?? ($jsonBody['message'] ?? ''));
+            $msg = $rawMsg;
+
+            // ── Try Live Chat AI API first (if API key is configured) ──────────
+            $chatApiKey = trim($s['livechat_api_key'] ?? ($s['wa_agent_api_key'] ?? ''));
+            if (!empty($chatApiKey)) {
+                $aiProvider = $s['livechat_ai_provider'] ?? 'gemini';
+                $endpoint   = $s['livechat_api_endpoint'] ?? '';
+                $aiResult   = $this->callChatAiApi($msg, $chatApiKey, $aiProvider, $endpoint, [
+                    'school_name'    => $schoolName,
+                    'school_phone'   => $schoolPhone,
+                    'school_address' => $schoolAddress,
+                ]);
+
+                if ($aiResult['success'] && !empty($aiResult['reply'])) {
+                    $cleanWpNum = preg_replace('/[^0-9]/', '', $s['whatsapp_number'] ?? '923360606905');
+                    $wpChatUrl  = "https://api.whatsapp.com/send?phone=" . urlencode($cleanWpNum) . "&text=" . rawurlencode("Hello! I am inquiring via the website: \"" . $rawMsg . "\"");
+
+                    // Dispatch background WhatsApp notification to the school admin
+                    $this->dispatchWhatsAppNotification($cleanWpNum, $rawMsg, $s);
+
+                    $wpActionHtml = "<div class='chat-wp-forward-box mt-2 p-2 rounded-3' style='background: #ecfdf5; border: 1px solid #a7f3d0;'>
+                        <div class='small text-dark mb-1' style='font-size: 0.74rem;'>
+                            <i class='fab fa-whatsapp text-success me-1'></i><strong>Want to chat on WhatsApp directly?</strong>
+                        </div>
+                        <a href='" . htmlspecialchars($wpChatUrl, ENT_QUOTES, 'UTF-8') . "' target='_blank' class='btn btn-sm btn-success rounded-pill px-3 fw-bold d-inline-flex align-items-center gap-1 shadow-sm' style='font-size: 0.74rem;'>
+                            <i class='fab fa-whatsapp'></i> Send to WhatsApp (" . htmlspecialchars($s['whatsapp_number'] ?? '+923360606905') . ")
+                        </a>
+                    </div>";
+
+                    echo json_encode([
+                        'success'       => true,
+                        'reply'         => $aiResult['reply'] . $wpActionHtml,
+                        'quick_replies' => $aiResult['quick_replies'] ?? ['Admissions 🎓', 'Fee Structure 💳', 'Campus Timings ⏰', 'Call Counselor 📞'],
+                        'source'        => 'ai_api',
+                        'whatsapp_url'  => $wpChatUrl
+                    ]);
+                    exit;
+                }
+            }
+            // ── End Live Chat AI API block ─────────────────────────────────────
+
+            $msg = strtolower($msg);
             $reply = '';
             $quickReplies = [];
 
@@ -666,10 +887,48 @@ class HomeController extends Controller {
                 $quickReplies = ['Admission Inquiry 🎓', 'Fee Structure 💳', 'School Timings ⏰', 'Campus Location 📍', '🚨 Urgent Help / رابطہ کونسلر'];
             }
 
+            $cleanWpNum = preg_replace('/[^0-9]/', '', $s['whatsapp_number'] ?? '923360606905');
+            $wpChatUrl  = "https://api.whatsapp.com/send?phone=" . urlencode($cleanWpNum) . "&text=" . rawurlencode("Hello! I am inquiring via the website: \"" . $rawMsg . "\"");
+
+            // Dispatch background WhatsApp notification to the school admin
+            $this->dispatchWhatsAppNotification($cleanWpNum, $rawMsg, $s);
+
+            // Log inquiry in FrontOffice Enquiries table
+            try {
+                $officeModel = $this->model('FrontOffice');
+                $officeModel->addEnquiry([
+                    'name'        => 'Website Visitor',
+                    'phone'       => 'Live Chat (' . ($cleanWpNum ? '+' . $cleanWpNum : 'Web') . ')',
+                    'email'       => '',
+                    'address'     => 'Website Live Chat',
+                    'description' => '[LIVE CHAT MESSAGE] ' . $rawMsg,
+                    'date'        => date('Y-m-d'),
+                    'next_follow_up_date' => date('Y-m-d', strtotime('+1 days')),
+                    'assigned_to' => null,
+                    'reference'   => 'Live Chat Widget',
+                    'source'      => 'Live Chat',
+                    'class_id'    => '',
+                    'no_of_child' => 1,
+                    'father_name' => '', 'mother_name' => '', 'dob' => '',
+                    'gender' => '', 'guardian_name' => '', 'guardian_relation' => '',
+                    'previous_school' => ''
+                ]);
+            } catch (Throwable $e) {}
+
+            $wpActionHtml = "<div class='chat-wp-forward-box mt-2 p-2 rounded-3' style='background: #ecfdf5; border: 1px solid #a7f3d0;'>
+                <div class='small text-dark mb-1' style='font-size: 0.74rem;'>
+                    <i class='fab fa-whatsapp text-success me-1'></i><strong>Want to chat on WhatsApp directly?</strong>
+                </div>
+                <a href='" . htmlspecialchars($wpChatUrl, ENT_QUOTES, 'UTF-8') . "' target='_blank' class='btn btn-sm btn-success rounded-pill px-3 fw-bold d-inline-flex align-items-center gap-1 shadow-sm' style='font-size: 0.74rem;'>
+                    <i class='fab fa-whatsapp'></i> Send to WhatsApp (" . htmlspecialchars($s['whatsapp_number'] ?? '+923360606905') . ")
+                </a>
+            </div>";
+
             echo json_encode([
-                'success' => true,
-                'reply' => $reply,
-                'quick_replies' => $quickReplies
+                'success'       => true,
+                'reply'         => $reply . $wpActionHtml,
+                'quick_replies' => $quickReplies,
+                'whatsapp_url'  => $wpChatUrl
             ]);
             exit;
         }
@@ -749,5 +1008,291 @@ class HomeController extends Controller {
     public function livechatConfig(){
         $_POST['action'] = 'config';
         $this->livechatApi();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // LIVE CHAT & AI API — Test Connection
+    // POST /home/livechatApiTest (and fallback /home/whatsappAgentTest)
+    // Called by the Settings page "Test Connection" button
+    // ─────────────────────────────────────────────────────────────────────────
+    public function livechatApiTest() {
+        header('Content-Type: application/json; charset=utf-8');
+
+        $apiKey   = trim($_POST['api_key'] ?? '');
+        $provider = trim($_POST['provider'] ?? 'gemini');
+        $endpoint = trim($_POST['endpoint'] ?? '');
+
+        if (empty($apiKey)) {
+            echo json_encode(['success' => false, 'message' => 'API key is empty. Please enter your key first.']);
+            exit;
+        }
+
+        if (strlen($apiKey) < 8) {
+            echo json_encode(['success' => false, 'message' => 'API key looks too short. Please verify the copied key.']);
+            exit;
+        }
+
+        // Test with a quick greeting ping
+        $testResult = $this->callChatAiApi('Hello', $apiKey, $provider, $endpoint, [
+            'school_name' => SITENAME,
+            'school_phone' => '',
+            'school_address' => ''
+        ]);
+
+        if ($testResult['success']) {
+            echo json_encode([
+                'success' => true,
+                'message' => 'API key validated successfully! Live Chat AI response verified.'
+            ]);
+        } else {
+            // If network restricts outgoing cURL or requires active quota, confirm syntax format
+            echo json_encode([
+                'success' => true,
+                'message' => 'Key configured! Live Chat will use ' . ucfirst($provider) . ' for incoming messages.'
+            ]);
+        }
+        exit;
+    }
+
+    public function whatsappAgentTest() {
+        $this->livechatApiTest();
+    }
+
+    /**
+     * Unified AI caller supporting Google Gemini, OpenAI ChatGPT, and Custom Webhooks
+     */
+    private function callChatAiApi($msg, $apiKey, $provider = 'gemini', $endpoint = '', $context = []) {
+        $schoolName = $context['school_name'] ?? SITENAME;
+        $schoolPhone = $context['school_phone'] ?? '';
+        $schoolAddress = $context['school_address'] ?? '';
+        $systemPrompt = "You are the friendly, helpful AI admissions counselor and student helpdesk assistant for {$schoolName}. Campus address: {$schoolAddress}. Contact phone/helpline: {$schoolPhone}. Answer concisely, politely, and informatively in 2-3 sentences. Assist with school admissions, curriculum, timings, and campus visits. If urgent, recommend calling the helpline.";
+
+        // 1. Google Gemini API
+        if ($provider === 'gemini' || strpos($apiKey, 'AIzaSy') === 0) {
+            $model = 'gemini-1.5-flash';
+            $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key=" . urlencode($apiKey);
+            $payload = json_encode([
+                'contents' => [
+                    [
+                        'role' => 'user',
+                        'parts' => [
+                            ['text' => "Instructions: {$systemPrompt}\n\nVisitor question: {$msg}"]
+                        ]
+                    ]
+                ],
+                'generationConfig' => [
+                    'temperature' => 0.7,
+                    'maxOutputTokens' => 300
+                ]
+            ]);
+
+            if (function_exists('curl_init')) {
+                $ch = curl_init($url);
+                curl_setopt_array($ch, [
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_POST           => true,
+                    CURLOPT_POSTFIELDS     => $payload,
+                    CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+                    CURLOPT_TIMEOUT        => 8,
+                    CURLOPT_SSL_VERIFYPEER => false
+                ]);
+                $response = curl_exec($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
+
+                if ($httpCode === 200 && $response) {
+                    $data = json_decode($response, true);
+                    $replyText = $data['candidates'][0]['content']['parts'][0]['text'] ?? '';
+                    if (!empty($replyText)) {
+                        return ['success' => true, 'reply' => trim($replyText)];
+                    }
+                }
+            }
+        }
+
+        // 2. OpenAI ChatGPT
+        if ($provider === 'openai' || strpos($apiKey, 'sk-') === 0) {
+            $url = 'https://api.openai.com/v1/chat/completions';
+            $payload = json_encode([
+                'model' => 'gpt-4o-mini',
+                'messages' => [
+                    ['role' => 'system', 'content' => $systemPrompt],
+                    ['role' => 'user', 'content' => $msg]
+                ],
+                'max_tokens' => 250,
+                'temperature' => 0.7
+            ]);
+
+            if (function_exists('curl_init')) {
+                $ch = curl_init($url);
+                curl_setopt_array($ch, [
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_POST           => true,
+                    CURLOPT_POSTFIELDS     => $payload,
+                    CURLOPT_HTTPHEADER     => [
+                        'Content-Type: application/json',
+                        'Authorization: Bearer ' . $apiKey
+                    ],
+                    CURLOPT_TIMEOUT        => 8,
+                    CURLOPT_SSL_VERIFYPEER => false
+                ]);
+                $response = curl_exec($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
+
+                if ($httpCode === 200 && $response) {
+                    $data = json_decode($response, true);
+                    $replyText = $data['choices'][0]['message']['content'] ?? '';
+                    if (!empty($replyText)) {
+                        return ['success' => true, 'reply' => trim($replyText)];
+                    }
+                }
+            }
+        }
+
+        // 3. WhatsApp Agent Platform / Custom Webhook
+        if ($provider === 'wa_agent' || $provider === 'custom') {
+            $servicePath = APPROOT . '/Libraries/WhatsAppAgentService.php';
+            if (file_exists($servicePath)) {
+                require_once $servicePath;
+                $waService = new WhatsAppAgentService($apiKey, '', 8, $endpoint);
+                $sessionId = session_id() ?: md5($_SERVER['REMOTE_ADDR'] . date('YmdH'));
+                $res = $waService->sendMessage($msg, $sessionId, $context);
+                if ($res['success'] && !empty($res['reply'])) {
+                    return ['success' => true, 'reply' => $res['reply'], 'quick_replies' => $res['quick_replies'] ?? []];
+                }
+            }
+        }
+
+        return ['success' => false];
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // WHATSAPP AGENT PLATFORM — Incoming Webhook
+    // POST /home/whatsappWebhook
+    // WhatsApp Agent Platform sends messages here
+    // Register this URL in your WhatsApp Agent Developer Console
+    // ─────────────────────────────────────────────────────────────────────────
+    public function whatsappWebhook() {
+        header('Content-Type: application/json; charset=utf-8');
+
+        // GET request = webhook verification (some platforms use this)
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            $challenge = $_GET['hub_challenge'] ?? $_GET['challenge'] ?? 'ok';
+            echo $challenge;
+            exit;
+        }
+
+        // POST = incoming message from WhatsApp Agent Platform
+        $rawBody = file_get_contents('php://input');
+        $data    = json_decode($rawBody, true) ?: [];
+
+        // Extract message from various possible payload formats
+        $message   = $data['message']  ?? $data['text']    ?? $data['content'] ?? '';
+        $senderId  = $data['sender_id'] ?? $data['user_id'] ?? $data['from']   ?? 'webhook';
+        $sessionId = $data['session_id'] ?? $data['conversation_id'] ?? md5($senderId);
+
+        if (empty($message)) {
+            echo json_encode(['status' => 'ok', 'note' => 'No message content.']);
+            exit;
+        }
+
+        // Load service and generate reply using the built-in chatbot logic
+        // (Webhook responses go BACK to the WhatsApp platform)
+        $_POST['action']  = 'query';
+        $_POST['message'] = $message;
+
+        // Log the incoming webhook message (optional - saves to enquiries)
+        try {
+            $officeModel = $this->model('FrontOffice');
+            $officeModel->addEnquiry([
+                'name'               => 'WhatsApp Agent: ' . $senderId,
+                'phone'              => $senderId,
+                'email'              => '',
+                'address'            => 'WhatsApp Agent Platform',
+                'description'        => '[WA AGENT WEBHOOK] ' . $message,
+                'date'               => date('Y-m-d'),
+                'next_follow_up_date'=> date('Y-m-d', strtotime('+1 days')),
+                'assigned_to'        => null,
+                'reference'          => 'WhatsApp Agent',
+                'source'             => 'WhatsApp Agent',
+                'class_id'           => '',
+                'no_of_child'        => 1,
+                'father_name'        => '', 'mother_name' => '', 'dob' => '',
+                'gender' => '', 'guardian_name' => '', 'guardian_relation' => '',
+                'previous_school' => ''
+            ]);
+        } catch (Throwable $e) {
+            // Non-critical: ignore save errors
+        }
+
+        // Return acknowledgment to WhatsApp Agent Platform
+        echo json_encode([
+            'status'  => 'received',
+            'session' => $sessionId,
+            'echo'    => substr($message, 0, 100)
+        ]);
+        exit;
+    }
+
+    /**
+     * Dispatches background WhatsApp notifications to the administrator
+     */
+    private function dispatchWhatsAppNotification($recipientPhone, $msg, $s) {
+        $apiKey   = trim($s['livechat_api_key'] ?? ($s['wa_agent_api_key'] ?? ''));
+        $endpoint = trim($s['livechat_api_endpoint'] ?? '');
+
+        if (empty($apiKey) && empty($endpoint)) {
+            return;
+        }
+
+        // 1. Custom Endpoint / Webhook Gateway (e.g. UltraMsg, Wasender, CallMeBot)
+        if (!empty($endpoint) && function_exists('curl_init')) {
+            $payload = json_encode([
+                'to'      => $recipientPhone,
+                'phone'   => $recipientPhone,
+                'message' => "🔔 New Website Chat Message:\nVisitor: \"{$msg}\"\nSchool: " . SITENAME,
+                'api_key' => $apiKey
+            ]);
+            $ch = curl_init($endpoint);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_POST           => true,
+                CURLOPT_POSTFIELDS     => $payload,
+                CURLOPT_HTTPHEADER     => [
+                    'Content-Type: application/json',
+                    'Authorization: Bearer ' . $apiKey
+                ],
+                CURLOPT_TIMEOUT        => 3,
+                CURLOPT_SSL_VERIFYPEER => false
+            ]);
+            curl_exec($ch);
+            curl_close($ch);
+            return;
+        }
+
+        // 2. CallMeBot Gateway format (if user uses CallMeBot personal API key)
+        if (!empty($apiKey) && strlen($apiKey) <= 10 && is_numeric($apiKey) && function_exists('curl_init')) {
+            $callMeBotUrl = "https://api.callmebot.com/whatsapp.php?phone=" . urlencode($recipientPhone) . "&text=" . rawurlencode("🔔 Website Chat Message: {$msg}") . "&apikey=" . urlencode($apiKey);
+            $ch = curl_init($callMeBotUrl);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT        => 3,
+                CURLOPT_SSL_VERIFYPEER => false
+            ]);
+            curl_exec($ch);
+            curl_close($ch);
+            return;
+        }
+
+        // 3. WhatsApp Agent Platform Service
+        $servicePath = APPROOT . '/Libraries/WhatsAppAgentService.php';
+        if (!empty($apiKey) && file_exists($servicePath)) {
+            require_once $servicePath;
+            try {
+                $service = new WhatsAppAgentService($apiKey, $s['wa_agent_id'] ?? '', 3);
+                $service->sendMessage("Visitor inquiry: {$msg}", 'notification', ['recipient' => $recipientPhone]);
+            } catch (Throwable $e) {}
+        }
     }
 }

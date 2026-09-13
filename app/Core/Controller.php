@@ -38,4 +38,77 @@ class Controller {
             die("View does not exist");
         }
     }
+
+    // =========================================================================
+    // SAAS MULTI-TENANCY & CENTRALIZED RBAC GUARD HELPERS
+    // =========================================================================
+
+    /**
+     * Enforce authenticated user session
+     */
+    protected function requireAuth(){
+        if (class_exists('AuthGuard')) {
+            AuthGuard::requireAuth();
+        } elseif (!isset($_SESSION['user_id'])) {
+            header('Location: ' . URLROOT . '/auth/login');
+            exit;
+        }
+    }
+
+    /**
+     * Enforce tenant school context
+     */
+    protected function requireSchoolContext(){
+        if (class_exists('AuthGuard')) {
+            AuthGuard::requireSchoolContext();
+        }
+    }
+
+    /**
+     * Require specific permission or abort
+     */
+    protected function requirePermission($permissionKey){
+        if (class_exists('AuthGuard')) {
+            AuthGuard::requirePermission($permissionKey);
+        }
+    }
+
+    /**
+     * Check if current user has specific permission
+     */
+    protected function hasPermission($permissionKey){
+        if (class_exists('AuthGuard')) {
+            return AuthGuard::hasPermission($permissionKey);
+        }
+        return true;
+    }
+
+    /**
+     * Get active tenant school ID
+     */
+    protected function getSchoolId(){
+        if (class_exists('TenantContext')) {
+            return TenantContext::getSchoolId();
+        }
+        return !empty($_SESSION['school_id']) ? (int)$_SESSION['school_id'] : 1;
+    }
+
+    /**
+     * Get active tenant school code
+     */
+    protected function getSchoolCode(){
+        if (class_exists('TenantContext')) {
+            return TenantContext::getSchoolCode();
+        }
+        return !empty($_SESSION['school_code']) ? $_SESSION['school_code'] : 'default';
+    }
+
+    /**
+     * Verify CSRF token on POST
+     */
+    protected function verifyCSRF(){
+        if (class_exists('AuthGuard')) {
+            AuthGuard::verifyCSRF();
+        }
+    }
 }

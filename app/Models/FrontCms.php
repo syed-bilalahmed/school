@@ -5,7 +5,8 @@ class FrontCms {
 
     public function __construct(){
         $this->db = new Database;
-        if (!self::$schemaEnsured) {
+        $lockFile = defined('APPROOT') ? (APPROOT . '/schema_synced_v3.5.lock') : (__DIR__ . '/../schema_synced_v3.5.lock');
+        if (!self::$schemaEnsured && !file_exists($lockFile)) {
             $this->ensureSchema();
             self::$schemaEnsured = true;
         }
@@ -128,8 +129,14 @@ class FrontCms {
         }
     }
 
+    private static $cachedCmsSettings = [];
+
     public function getSettings(){
         $schoolId = class_exists('TenantContext') ? (TenantContext::getSchoolId() ?: 1) : 1;
+        if (isset(self::$cachedCmsSettings[$schoolId])) {
+            return self::$cachedCmsSettings[$schoolId];
+        }
+
         $this->db->query("SELECT * FROM front_cms_settings WHERE school_id = :school_id OR school_id IS NULL ORDER BY school_id DESC LIMIT 1");
         $this->db->bind(':school_id', $schoolId);
         $settings = $this->db->single();
@@ -143,10 +150,12 @@ class FrontCms {
             $settings->logo = SiteSetting::getGlobal('logo', '');
         }
 
+        self::$cachedCmsSettings[$schoolId] = $settings;
         return $settings;
     }
 
     public function updateSettings($data){
+        self::$cachedCmsSettings = [];
         $settings = $this->getSettings();
         
         if (!$settings) {

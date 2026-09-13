@@ -80,7 +80,7 @@
                 </li>
                 <li class="nav-item">
                     <button class="nav-link py-2 px-3 fw-semibold <?php echo ($activeTab === 'livechat') ? 'active' : ''; ?>" id="livechat-tab" data-bs-toggle="pill" data-bs-target="#tab-livechat" type="button" role="tab">
-                        <i class="fab fa-whatsapp text-success me-2"></i>WhatsApp &amp; Live Chat
+                        <i class="fab fa-whatsapp text-success me-2"></i>WhatsApp Helpdesk
                     </button>
                 </li>
             </ul>
@@ -1583,18 +1583,18 @@
         </div>
 
         <!-- ============================================================= -->
-        <!-- TAB 7: WHATSAPP COMMUNICATION & RUNTIME LIVE CHAT API         -->
+        <!-- TAB 7: WHATSAPP FLOATING HELPDESK WIDGET                      -->
         <!-- ============================================================= -->
         <div class="tab-pane fade <?php echo ($activeTab === 'livechat') ? 'show active' : ''; ?>" id="tab-livechat" role="tabpanel">
             <form action="<?php echo URLROOT; ?>/setting/index?tab=livechat" method="post" class="ajax-settings-form" id="livechatSettingsForm">
                 <input type="hidden" name="tab" value="livechat">
                 <input type="hidden" name="livechat_setting" value="1">
+                <input type="hidden" name="livechat_enabled" value="0">
                 <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
 
-                <div class="row g-4">
-                    <!-- Left Column: WhatsApp Configuration -->
-                    <div class="col-lg-6">
-                        <div class="card border-0 shadow-sm h-100">
+                <div class="row justify-content-center g-4">
+                    <div class="col-lg-8 col-xl-7">
+                        <div class="card border-0 shadow-sm">
                             <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
                                 <h5 class="card-title fw-bold mb-0 text-success d-flex align-items-center">
                                     <i class="fab fa-whatsapp me-2 fs-4"></i>WhatsApp Floating Helpdesk
@@ -1605,7 +1605,7 @@
                             </div>
                             <div class="card-body p-4">
                                 <p class="text-muted small mb-4">
-                                    Displays a high-conversion floating WhatsApp button on every public website page, enabling prospective parents and students to start an immediate chat with your admissions office.
+                                    Displays a high-conversion floating WhatsApp button on every public website page, enabling prospective parents and students to start an immediate chat with your admissions office directly on WhatsApp.
                                 </p>
 
                                 <div class="row g-3">
@@ -1628,11 +1628,11 @@
                                         <div class="input-group">
                                             <span class="input-group-text bg-white border-end-0"><i class="fa fa-phone text-success"></i></span>
                                             <input type="text" name="whatsapp_number" id="whatsappNumberInput" class="form-control border-start-0 font-monospace" 
-                                                   value="<?php echo htmlspecialchars($s['whatsapp_number'] ?? '+92-300-1234567'); ?>" 
-                                                   placeholder="e.g. +923001234567 or 03001234567">
+                                                   value="<?php echo htmlspecialchars($s['whatsapp_number'] ?? '+923360606905'); ?>" 
+                                                   placeholder="e.g. +923360606905 or 03360606905">
                                         </div>
                                         <div class="form-text text-muted" style="font-size: 0.78rem;">
-                                            Include country code (e.g. <code>+923001234567</code> for Pakistan). Spaces and hyphens will be automatically formatted for the WhatsApp API.
+                                            Include country code (e.g. <code>+923360606905</code> for Pakistan). Spaces and hyphens will be automatically formatted for the WhatsApp API.
                                         </div>
                                     </div>
 
@@ -1679,7 +1679,7 @@
                                                 <div class="text-muted" style="font-size: 0.75rem;">Opens WhatsApp in a new tab with your configured settings.</div>
                                             </div>
                                             <?php 
-                                            $cleanWpNum = preg_replace('/[^0-9]/', '', $s['whatsapp_number'] ?? '923001234567');
+                                            $cleanWpNum = preg_replace('/[^0-9]/', '', $s['whatsapp_number'] ?? '923360606905');
                                             $wpDefaultMsg = rawurlencode($s['whatsapp_default_msg'] ?? 'Hello! I would like to inquire about admissions.');
                                             $wpTestUrl = "https://api.whatsapp.com/send?phone={$cleanWpNum}&text={$wpDefaultMsg}";
                                             ?>
@@ -1690,167 +1690,13 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-
-                    <!-- Right Column: Live Chat Configuration & Runtime API -->
-                    <div class="col-lg-6">
-                        <div class="card border-0 shadow-sm h-100">
-                            <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
-                                <h5 class="card-title fw-bold mb-0 text-primary d-flex align-items-center">
-                                    <i class="fa fa-comments me-2 fs-4"></i>Live Chat System &amp; Runtime API
-                                </h5>
-                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill small">
-                                    <i class="fa fa-robot me-1"></i>Multi-Provider Support
-                                </span>
-                            </div>
-                            <div class="card-body p-4">
-                                <p class="text-muted small mb-4">
-                                    Deploy an automated smart helpdesk assistant or connect third-party live chat services (Tawk.to, Crisp, or Custom Script) dynamically at runtime.
-                                </p>
-
-                                <div class="row g-3">
-                                    <!-- Enable Switch -->
-                                    <div class="col-12">
-                                        <div class="form-check form-switch p-3 bg-light rounded-3 border">
-                                            <input class="form-check-input ms-0 me-3" type="checkbox" name="livechat_enabled" value="1" id="livechatEnabledCheck" <?php echo (($s['livechat_enabled'] ?? '1') !== '0') ? 'checked' : ''; ?>>
-                                            <label class="form-check-label fw-bold text-dark cursor-pointer" for="livechatEnabledCheck">
-                                                Enable Website Live Chat Widget
-                                                <span class="d-block text-muted small fw-normal">Displays an interactive floating Live Chat button and widget on the public website.</span>
-                                            </label>
-                                        </div>
-                                    </div>
-
-                                    <!-- Provider Selection -->
-                                    <div class="col-12">
-                                        <label class="form-label text-dark fw-semibold small mb-1">
-                                            <i class="fa fa-sliders-h text-primary me-1"></i>Live Chat Engine / Provider <span class="text-danger">*</span>
-                                        </label>
-                                        <?php $currentProvider = $s['livechat_provider'] ?? 'builtin'; ?>
-                                        <select name="livechat_provider" id="livechatProviderSelect" class="form-select fw-semibold">
-                                            <option value="builtin" <?php echo ($currentProvider === 'builtin') ? 'selected' : ''; ?>>
-                                                🤖 Built-in Smart School Assistant (Instant, Zero Setup, CRM Integrated)
-                                            </option>
-                                            <option value="tawk" <?php echo ($currentProvider === 'tawk') ? 'selected' : ''; ?>>
-                                                💬 Tawk.to Live Chat (Free Agent Live Chat)
-                                            </option>
-                                            <option value="crisp" <?php echo ($currentProvider === 'crisp') ? 'selected' : ''; ?>>
-                                                ⚡ Crisp Chat (Modern Omnichannel Chat)
-                                            </option>
-                                            <option value="custom" <?php echo ($currentProvider === 'custom') ? 'selected' : ''; ?>>
-                                                🔧 Custom Script / Third-Party Embed Code
-                                            </option>
-                                        </select>
-                                        <div class="form-text text-muted" style="font-size: 0.78rem;">
-                                            Select the chat engine to load on the frontend.
-                                        </div>
-                                    </div>
-
-                                    <!-- Section A: Built-in Smart Assistant Fields -->
-                                    <div class="col-12 provider-fields" id="fieldsBuiltin" style="<?php echo ($currentProvider === 'builtin') ? '' : 'display: none;'; ?>">
-                                        <div class="p-3 bg-light rounded-3 border">
-                                            <h6 class="fw-bold text-dark mb-2 small"><i class="fa fa-magic text-primary me-1"></i>Smart School Assistant Customization</h6>
-                                            <div class="mb-3">
-                                                <label class="form-label text-dark small mb-1 fw-semibold">Widget Header Title</label>
-                                                <input type="text" name="livechat_welcome_title" class="form-control form-control-sm" 
-                                                       value="<?php echo htmlspecialchars($s['livechat_welcome_title'] ?? 'Live School Support'); ?>" 
-                                                       placeholder="e.g. Live School Support">
-                                            </div>
-                                            <div class="mb-2">
-                                                <label class="form-label text-dark small mb-1 fw-semibold">Welcome Greeting Message</label>
-                                                <textarea name="livechat_welcome_msg" rows="2" class="form-control form-control-sm" placeholder="Welcome message..."><?php echo htmlspecialchars($s['livechat_welcome_msg'] ?? 'Hello! Welcome to our school helpdesk. How can we assist you today?'); ?></textarea>
-                                            </div>
-                                            <div class="alert alert-info py-2 px-3 mb-0 small" style="font-size: 0.76rem;">
-                                                <i class="fa fa-info-circle me-1"></i>
-                                                <strong>Auto-CRM Sync:</strong> When visitors submit their name &amp; phone in the chat, it automatically creates a new lead in <a href="<?php echo URLROOT; ?>/frontoffice/enquiry" class="alert-link" target="_blank">Admission Enquiries</a>!
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Section B: Tawk.to Fields -->
-                                    <div class="col-12 provider-fields" id="fieldsTawk" style="<?php echo ($currentProvider === 'tawk') ? '' : 'display: none;'; ?>">
-                                        <div class="p-3 bg-light rounded-3 border">
-                                            <h6 class="fw-bold text-dark mb-2 small"><i class="fa fa-comment-dots text-success me-1"></i>Tawk.to Account Credentials</h6>
-                                            <div class="row g-2 mb-2">
-                                                <div class="col-md-6">
-                                                    <label class="form-label text-dark small mb-1 fw-semibold">Tawk.to Property ID</label>
-                                                    <input type="text" name="livechat_tawk_property_id" class="form-control form-control-sm font-monospace" 
-                                                           value="<?php echo htmlspecialchars($s['livechat_tawk_property_id'] ?? ''); ?>" 
-                                                           placeholder="e.g. 64a8b1c2d3e4f5...">
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label class="form-label text-dark small mb-1 fw-semibold">Tawk.to Widget ID</label>
-                                                    <input type="text" name="livechat_tawk_widget_id" class="form-control form-control-sm font-monospace" 
-                                                           value="<?php echo htmlspecialchars($s['livechat_tawk_widget_id'] ?? ''); ?>" 
-                                                           placeholder="e.g. 1h4j5k6l7">
-                                                </div>
-                                            </div>
-                                            <div class="text-muted" style="font-size: 0.75rem;">
-                                                Found in Tawk.to Dashboard &gt; Administration &gt; Chat Widget code (format: <code>embed.tawk.to/{property_id}/{widget_id}</code>).
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Section C: Crisp Chat Fields -->
-                                    <div class="col-12 provider-fields" id="fieldsCrisp" style="<?php echo ($currentProvider === 'crisp') ? '' : 'display: none;'; ?>">
-                                        <div class="p-3 bg-light rounded-3 border">
-                                            <h6 class="fw-bold text-dark mb-2 small"><i class="fa fa-bolt text-primary me-1"></i>Crisp Chat Configuration</h6>
-                                            <div class="mb-2">
-                                                <label class="form-label text-dark small mb-1 fw-semibold">Crisp Website ID (UUID)</label>
-                                                <input type="text" name="livechat_crisp_website_id" class="form-control form-control-sm font-monospace" 
-                                                       value="<?php echo htmlspecialchars($s['livechat_crisp_website_id'] ?? ''); ?>" 
-                                                       placeholder="e.g. 12345678-abcd-1234-abcd-1234567890ab">
-                                            </div>
-                                            <div class="text-muted" style="font-size: 0.75rem;">
-                                                Found in Crisp Dashboard &gt; Settings &gt; Website Settings &gt; Setup Instructions.
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Section D: Custom Embed Script -->
-                                    <div class="col-12 provider-fields" id="fieldsCustom" style="<?php echo ($currentProvider === 'custom') ? '' : 'display: none;'; ?>">
-                                        <div class="p-3 bg-light rounded-3 border">
-                                            <h6 class="fw-bold text-dark mb-2 small"><i class="fa fa-code text-danger me-1"></i>Custom Embed JavaScript Snippet</h6>
-                                            <div class="mb-2">
-                                                <label class="form-label text-dark small mb-1 fw-semibold">JavaScript Embed Code</label>
-                                                <textarea name="livechat_custom_script" rows="4" class="form-control form-control-sm font-monospace" placeholder="<script>...your chat embed snippet...</script>"><?php echo htmlspecialchars($s['livechat_custom_script'] ?? ''); ?></textarea>
-                                            </div>
-                                            <div class="text-muted" style="font-size: 0.75rem;">
-                                                Paste any widget script (e.g. Zendesk, Intercom, JivoChat, LiveChat). It will be safely injected at runtime.
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Runtime API Details Card -->
-                                    <div class="col-12">
-                                        <div class="p-3 bg-white rounded-3 border">
-                                            <div class="d-flex align-items-center justify-content-between mb-1">
-                                                <span class="fw-bold text-dark small"><i class="fa fa-network-wired text-info me-1"></i>Runtime REST API Endpoint:</span>
-                                                <span class="badge bg-success small">ACTIVE</span>
-                                            </div>
-                                            <code class="d-block p-2 bg-light rounded text-dark small mb-1" style="font-size: 0.75rem;">
-                                                <?php echo URLROOT; ?>/home/livechatApi
-                                            </code>
-                                            <div class="text-muted" style="font-size: 0.72rem;">
-                                                Accepts <code>action=config</code>, <code>action=query</code>, and <code>action=submit_enquiry</code> via GET/POST JSON.
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Bottom Bar: Submit Button -->
-                    <div class="col-12">
-                        <div class="card border-0 shadow-sm">
-                            <div class="card-body p-3 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
+                            <div class="card-footer bg-light p-3 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
                                 <div class="text-muted small">
                                     <i class="fa fa-check-circle text-success me-1"></i>
-                                    Settings take effect immediately on public web pages without browser caching delays.
+                                    WhatsApp widget updates immediately on public pages.
                                 </div>
-                                <button type="submit" class="btn btn-primary px-4 fw-bold">
-                                    <i class="fa fa-save me-1"></i> Save WhatsApp &amp; Live Chat Settings
+                                <button type="submit" class="btn btn-success px-4 fw-bold">
+                                    <i class="fa fa-save me-1"></i> Save WhatsApp Settings
                                 </button>
                             </div>
                         </div>
@@ -2377,27 +2223,6 @@
                     reader.readAsDataURL(this.files[0]);
                 }
             });
-        }
-
-        // Live Chat Provider Switcher
-        const providerSelect = document.getElementById('livechatProviderSelect');
-        if (providerSelect && !providerSelect._hasChangeListener) {
-            providerSelect._hasChangeListener = true;
-            const updateProviderFields = function() {
-                const val = providerSelect.value;
-                const fieldMap = {
-                    'builtin': 'fieldsBuiltin',
-                    'tawk': 'fieldsTawk',
-                    'crisp': 'fieldsCrisp',
-                    'custom': 'fieldsCustom'
-                };
-                Object.keys(fieldMap).forEach(key => {
-                    const el = document.getElementById(fieldMap[key]);
-                    if (el) el.style.display = (key === val) ? 'block' : 'none';
-                });
-            };
-            providerSelect.addEventListener('change', updateProviderFields);
-            updateProviderFields();
         }
     }
 

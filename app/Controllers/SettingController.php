@@ -209,26 +209,18 @@ class SettingController extends Controller {
                 }
                 $activeTab = 'email';
 
-            } elseif(isset($_POST['livechat_setting']) || ($postedTab === 'livechat' && (isset($_POST['whatsapp_number']) || isset($_POST['livechat_provider']) || isset($_POST['livechat_enabled'])))){
+            } elseif(isset($_POST['livechat_setting']) || ($postedTab === 'livechat' && isset($_POST['whatsapp_number']))){
                 $chatData = [
                     'whatsapp_enabled' => isset($_POST['whatsapp_enabled']) ? '1' : '0',
-                    'whatsapp_number' => trim($_POST['whatsapp_number'] ?? ''),
+                    'whatsapp_number' => trim($_POST['whatsapp_number'] ?? '+923360606905'),
                     'whatsapp_default_msg' => trim($_POST['whatsapp_default_msg'] ?? ''),
                     'whatsapp_agent_name' => trim($_POST['whatsapp_agent_name'] ?? 'Admissions & Helpdesk'),
                     'whatsapp_popup_enabled' => isset($_POST['whatsapp_popup_enabled']) ? '1' : '0',
-                    
-                    'livechat_enabled' => isset($_POST['livechat_enabled']) ? '1' : '0',
-                    'livechat_provider' => trim($_POST['livechat_provider'] ?? 'builtin'),
-                    'livechat_welcome_title' => trim($_POST['livechat_welcome_title'] ?? 'Live School Support'),
-                    'livechat_welcome_msg' => trim($_POST['livechat_welcome_msg'] ?? 'Hello! Welcome to our school helpdesk. How can we assist you today?'),
-                    'livechat_tawk_property_id' => trim($_POST['livechat_tawk_property_id'] ?? ''),
-                    'livechat_tawk_widget_id' => trim($_POST['livechat_tawk_widget_id'] ?? ''),
-                    'livechat_crisp_website_id' => trim($_POST['livechat_crisp_website_id'] ?? ''),
-                    'livechat_custom_script' => trim($_POST['livechat_custom_script'] ?? '')
+                    'livechat_enabled' => '0'
                 ];
 
                 $settingModel->updateSettings($chatData);
-                $_SESSION['flash_success'] = 'WhatsApp communication and Live Chat API configuration saved successfully.';
+                $_SESSION['flash_success'] = 'WhatsApp floating helpdesk configuration saved successfully.';
                 $activeTab = 'livechat';
 
             } elseif(isset($_POST['update_role_permissions'])){

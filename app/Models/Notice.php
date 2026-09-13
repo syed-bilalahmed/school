@@ -41,6 +41,7 @@ class Notice {
         
         if ($this->db->execute()) {
             $lastId = $this->db->lastInsertId();
+            self::clearPublicNoticesCache();
             return $lastId ?: true;
         }
         return false;
@@ -95,7 +96,11 @@ class Notice {
             $this->db->bind(':attachment', $data['attachment']);
         }
 
-        return $this->db->execute();
+        $res = $this->db->execute();
+        if ($res) {
+            self::clearPublicNoticesCache();
+        }
+        return $res;
     }
 
     /**
@@ -106,7 +111,11 @@ class Notice {
         $this->db->query("DELETE FROM notice_board WHERE id = :id AND (school_id = :school_id OR school_id IS NULL)");
         $this->db->bind(':id', $id);
         $this->db->bind(':school_id', $schoolId);
-        return $this->db->execute();
+        $res = $this->db->execute();
+        if ($res) {
+            self::clearPublicNoticesCache();
+        }
+        return $res;
     }
 
     /**
@@ -439,10 +448,40 @@ class Notice {
         }
     }
 
+    private static $cachedPublicNotices = null;
+
+    /**
+     * Clear public notices cache when notices change
+     */
+    public static function clearPublicNoticesCache(){
+        self::$cachedPublicNotices = null;
+        $schoolId = class_exists('TenantContext') ? (TenantContext::getSchoolId() ?: 1) : 1;
+        if (class_exists('QueryCache')) {
+            QueryCache::forget('public_notices_' . $schoolId);
+        }
+    }
+
     /**
      * Get public circulars with attachments for top marquee and modal popup across all frontend pages
      */
     public static function getPublicNoticesWithAttachments(){
+        if (self::$cachedPublicNotices !== null) {
+            return self::$cachedPublicNotices;
+        }
+
+        $schoolId = class_exists('TenantContext') ? (TenantContext::getSchoolId() ?: 1) : 1;
+        if (class_exists('QueryCache')) {
+            self::$cachedPublicNotices = QueryCache::remember('public_notices_' . $schoolId, 180, function() {
+                return self::fetchPublicNoticesWithAttachments();
+            });
+            return self::$cachedPublicNotices ?: [];
+        }
+
+        self::$cachedPublicNotices = self::fetchPublicNoticesWithAttachments();
+        return self::$cachedPublicNotices ?: [];
+    }
+
+    private static function fetchPublicNoticesWithAttachments(){
         try {
             $db = new Database;
             self::ensureNoticeDocuments();

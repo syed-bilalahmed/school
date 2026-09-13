@@ -1,12 +1,15 @@
 <?php
 class FrontPage {
     private $db;
+    private static $schemaChecked = false;
+    private static $defaultsChecked = false;
 
     public function __construct(){
         $this->db = new Database;
     }
 
     public function ensureTableSchema(){
+        if (self::$schemaChecked) return;
         try {
             $this->db->query("SHOW COLUMNS FROM front_pages LIKE 'file_path'");
             if(!$this->db->single()){
@@ -23,12 +26,15 @@ class FrontPage {
                 $this->db->query("ALTER TABLE front_pages ADD COLUMN meta_description VARCHAR(255) NULL AFTER file_name");
                 $this->db->execute();
             }
+            self::$schemaChecked = true;
         } catch(Throwable $e){
-            // Schema check fallback
+            self::$schemaChecked = true;
         }
     }
 
     public function ensureCoreDefaultPages(){
+        if (self::$defaultsChecked) return;
+        self::$defaultsChecked = true;
         $defaults = [
             [
                 'title' => 'Academic Pathways & Curriculum',

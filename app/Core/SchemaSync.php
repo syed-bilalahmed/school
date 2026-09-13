@@ -10,14 +10,34 @@ class SchemaSync {
         }
 
         // Performance Lock: Prevent running 80+ CREATE/SHOW queries on EVERY single request
-        $lockFile = defined('APPROOT') ? (APPROOT . '/schema_synced.lock') : (__DIR__ . '/../schema_synced.lock');
-        if (file_exists($lockFile) || !empty($_SESSION['schema_synced'])) {
+        $lockFile = defined('APPROOT') ? (APPROOT . '/schema_synced_v3.5.lock') : (__DIR__ . '/../schema_synced_v3.5.lock');
+        if (file_exists($lockFile) || !empty($_SESSION['schema_v3_5_synced'])) {
             self::$synced = true;
             return;
         }
 
         try {
             $db = new Database();
+
+            // 0. schools table (Multi-Tenant SaaS Core)
+            $db->query("CREATE TABLE IF NOT EXISTS schools (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                code VARCHAR(50) NOT NULL UNIQUE,
+                name VARCHAR(150) NOT NULL,
+                domain VARCHAR(100) NULL,
+                status VARCHAR(20) DEFAULT 'active',
+                plan_id INT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )");
+            $db->execute();
+
+            $db->query("SELECT id FROM schools WHERE id = 1 LIMIT 1");
+            if (!$db->single()) {
+                $siteName = defined('SITENAME') ? SITENAME : 'Main Executive Campus';
+                $db->query("INSERT INTO schools (id, code, name, status) VALUES (1, 'default', :name, 'active')");
+                $db->bind(':name', $siteName);
+                $db->execute();
+            }
             
             // 1. academic_sessions table
             $db->query("CREATE TABLE IF NOT EXISTS academic_sessions (
@@ -809,6 +829,7 @@ class SchemaSync {
 
             self::$synced = true;
             $_SESSION['schema_synced'] = true;
+            $_SESSION['schema_v3_5_synced'] = true;
             @file_put_contents($lockFile, date('Y-m-d H:i:s'));
         } catch (Exception $e) {
             error_log("SchemaSync error: " . $e->getMessage());
