@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School ERP - Full-Fledged Mobile API Suite &amp; Playground</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-body: #0b0f19;
+            --bg-card: #131b2e;
+            --bg-card-header: #1a243d;
+            --bg-input: #0c1322;
+            --border-color: #24304f;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-glow: rgba(79, 70, 229, 0.25);
+            --accent: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --radius-md: 10px;
+            --radius-lg: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 20px 20px 40px;
+            overflow-x: hidden;
+        }
+
+        /* Top Header */
+        .header {
+            max-width: 1440px;
+            margin: 0 auto 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 16px;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .header-logo {
+            width: 46px;
+            height: 46px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 22px;
+            box-shadow: 0 4px 20px var(--primary-glow);
+        }
+
+        .header-title h1 {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .header-title p {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .header-badges {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-live {
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: var(--success);
+        }
+
+        .badge-version {
+            background: rgba(79, 70, 229, 0.15);
+            border: 1px solid rgba(79, 70, 229, 0.3);
+            color: #a5b4fc;
+        }
+
+        .dot-ping {
+            width: 8px;
+            height: 8px;
+            background-color: var(--success);
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 10px var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.8); }
+        }
+
+        /* Layout Grid */
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 350px 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 1280px) {
+            .container {
+                grid-template-columns: 320px 1fr;
+            }
+            .col-response {
+                grid-column: span 2;
+            }
+        }
+
+        @media (max-width: 840px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            .col-response {
+                grid-column: span 1;
+            }
+        }
+
+        /* Cards */
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+        }
+
+        .card-header {
+            padding: 14px 18px;
+            background-color: var(--bg-card-header);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header h2 {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-body {
+            padding: 16px 18px;
+            flex: 1;
+        }
+
+        /* Tab switchers */
+        .tab-nav {
+            display: flex;
+            background: var(--bg-input);
+            border-radius: var(--radius-md);
+            padding: 3px;
+            margin-bottom: 14px;
+            border: 1px solid var(--border-color);
+        }
+
+        .tab-nav button {
+            flex: 1;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 7px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-nav button.active {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 2px 8px var(--primary-glow);
+        }
+
+        /* Form elements */
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 5px;
+        }
+
+        .input-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-wrap i.prefix-icon {
+            position: absolute;
+            left: 12px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .form-control {
+            width: 100%;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 9px 12px 9px 34px;
+            color: #fff;
+            font-size: 13px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-control.no-prefix {
+            padding-left: 12px;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+        }
+
+        .btn-toggle-eye {
+            position: absolute;
+            right: 10px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 9px 16px;
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: #fff;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            box-shadow: 0 4px 14px var(--primary-glow);
+        }
+
+        .btn-success {
+            background-color: var(--success);
+            color: #fff;
+        }
+
+        .btn-success:hover {
+            background-color: #059669;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.14);
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+            width: auto;
+        }
+
+        /* Token Card */
+        .token-box {
+            background: rgba(6, 182, 212, 0.08);
+            border: 1px solid rgba(6, 182, 212, 0.25);
+            border-radius: var(--radius-md);
+            padding: 10px 12px;
+            margin-top: 12px;
+        }
+
+        .token-box-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+        }
+
+        .token-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10.5px;
+            color: #fff;
+            word-break: break-all;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 6px 8px;
+            border-radius: 6px;
+        }
+
+        /* Endpoint buttons */
+        .endpoint-category {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            margin: 14px 0 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .endpoint-category:first-of-type {
+            margin-top: 2px;
+        }
+
+        .endpoint-btn {
+            width: 100%;
+            background: var(--bg-card-header);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 9px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: #fff;
+            font-size: 12.5px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 7px;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .endpoint-btn:hover {
+            border-color: var(--primary);
+            background: rgba(79, 70, 229, 0.12);
+            transform: translateY(-1px);
+        }
+
+        .endpoint-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .method-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .method-get {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .method-post {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .auth-icon {
+            font-size: 10px;
+            color: var(--warning);
+        }
+
+        /* Action Form Card (for POST endpoints) */
+        .action-box {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            margin-bottom: 12px;
+        }
+
+        .action-box h4 {
+            font-size: 13px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .action-box textarea {
+            width: 100%;
+            background: #060911;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11.5px;
+            color: #38bdf8;
+            height: 90px;
+            outline: none;
+            resize: vertical;
+            margin-bottom: 10px;
+        }
+
+        .action-box textarea:focus {
+            border-color: var(--primary);
+        }
+
+        /* Response Console */
+        .console-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+        }
+
+        .status-pill {
+            font-family: 'JetBrains Mono', monospace;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .status-200 {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .status-400, .status-401, .status-403, .status-404, .status-422, .status-500 {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        .latency-text {
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+        }
+
+        .code-container {
+            background: #060911;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            min-height: 520px;
+            max-height: 700px;
+            overflow: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11.5px;
+            line-height: 1.5;
+            color: #38bdf8;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        /* User Profile Card */
+        .mobile-sim-card {
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 14px;
+            margin-top: 12px;
+            display: none;
+        }
+
+        .sim-user-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+
+        .sim-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .sim-info h4 {
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .sim-info p {
+            font-size: 11.5px;
+            color: var(--text-muted);
+        }
+
+        .sim-badge {
+            background: rgba(79, 70, 229, 0.2);
+            color: #818cf8;
+            font-size: 9.5px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-title">
+            <div class="header-logo">
+                <i class="fa fa-plug-circle-bolt"></i>
+            </div>
+            <div>
+                <h1>Full-Fledged Mobile ERP API Suite</h1>
+                <p>Complete Show &amp; Manage Mobile Client for Flutter, React Native, and native iOS/Android apps</p>
+            </div>
+        </div>
+        <div class="header-badges">
+            <span class="badge-pill badge-version">
+                <i class="fa fa-code-branch"></i> v2.0 Full-Fledged
+            </span>
+            <span class="badge-pill badge-live">
+                <span class="dot-ping"></span>
+                Backend Live
+            </span>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+        
+        <!-- LEFT COLUMN: Credentials & User Authentication -->
+        <div class="card">
+            <div class="card-header">
+                <h2><i class="fa fa-sliders text-primary"></i> Gateway Config</h2>
+                <button class="btn btn-secondary btn-sm" onclick="resetDefaults()" title="Reset to default test values">
+                    <i class="fa fa-rotate-left"></i>
+                </button>
+            </div>
+            <div class="card-body">
+                <!-- Base URL -->
+                <div class="form-group">
+                    <label class="form-label">API Base URL</label>
+                    <div class="input-wrap">
+                        <i class="fa fa-network-wired prefix-icon"></i>
+                        <input type="text" id="apiBaseUrl" class="form-control" value="http://localhost/school/api">
+                    </div>
+                </div>
+
+                <!-- API Key -->
+                <div class="form-group">
+                    <label class="form-label">Client API Key (X-API-KEY)</label>
+                    <div class="input-wrap">
+                        <i class="fa fa-key prefix-icon"></i>
+                        <input type="password" id="apiKey" class="form-control" value="sk_live_demo_flutter_app_key_2026">
+                        <button type="button" class="btn-toggle-eye" onclick="toggleApiKeyVisibility()">
+                            <i class="fa fa-eye" id="eyeIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div style="margin: 16px 0; border-top: 1px dashed var(--border-color);"></div>
+
+                <!-- User Login Form -->
+                <h3 style="font-size: 12.5px; font-weight: 700; color: #fff; margin-bottom: 8px;">
+                    <i class="fa fa-mobile-screen text-accent me-1"></i> Mobile User Login
+                </h3>
+
+                <div class="form-group">
+                    <label class="form-label">Email OR Student Admission No</label>
+                    <div class="input-wrap">
+                        <i class="fa fa-user prefix-icon"></i>
+                        <input type="text" id="loginIdentifier" class="form-control" placeholder="e.g. ADM-001 or admin@school.com" value="admin@gmail.com">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <div class="input-wrap">
+                        <i class="fa fa-lock prefix-icon"></i>
+                        <input type="password" id="loginPassword" class="form-control" placeholder="Enter password" value="123456">
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="performLogin()" id="btnLogin">
+                    <i class="fa fa-right-to-bracket"></i> Login &amp; Get Token
+                </button>
+
+                <!-- Stored Bearer Token Display -->
+                <div class="token-box" id="tokenBox" style="display: none;">
+                    <div class="token-box-header">
+                        <span><i class="fa fa-shield-halved"></i> Active Bearer Token</span>
+                        <a href="javascript:void(0)" onclick="clearToken()" style="color: var(--danger); text-decoration: none; font-size: 11px;">Clear</a>
+                    </div>
+                    <div class="token-value" id="storedToken">No token</div>
+                </div>
+
+                <!-- Mobile User Summary Card (Shown when logged in) -->
+                <div class="mobile-sim-card" id="simUserCard">
+                    <div class="sim-user-header">
+                        <div class="sim-avatar" id="simAvatar">U</div>
+                        <div class="sim-info">
+                            <h4 id="simName">User Name</h4>
+                            <p id="simEmail">email@example.com</p>
+                            <span class="sim-badge" id="simRole">Role</span>
+                        </div>
+                    </div>
+                    <div style="font-size: 11.5px; color: var(--text-muted);" id="simDetails">
+                        Campus ID: #1
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MIDDLE COLUMN: Full-Fledged Endpoints (Show + Manage Tabs) -->
+        <div class="card">
+            <div class="card-header">
+                <h2><i class="fa fa-cubes text-accent"></i> API Endpoints Hub</h2>
+                <span style="font-size: 11px; color: var(--text-muted);">Show &amp; Manage</span>
+            </div>
+            <div class="card-body" style="max-height: 740px; overflow-y: auto;">
+
+                <!-- Tab Navigation: GET vs POST -->
+                <div class="tab-nav">
+                    <button class="active" id="btnTabGet" onclick="switchEndpointTab('get')">
+                        <i class="fa fa-eye me-1"></i> 1. View / Show (GET)
+                    </button>
+                    <button id="btnTabPost" onclick="switchEndpointTab('post')">
+                        <i class="fa fa-pen-to-square me-1"></i> 2. Manage / Action (POST)
+                    </button>
+                </div>
+
+                <!-- ========================================================= -->
+                <!-- VIEW / SHOW ENDPOINTS (GET)                               -->
+                <!-- ========================================================= -->
+                <div id="sectionGetEndpoints">
+                    <!-- Dropdowns & Meta -->
+                    <div class="endpoint-category">
+                        <i class="fa fa-table-list"></i> Academic Metadata Dropdowns
+                    </div>
+
+                    <button class="endpoint-btn" onclick="callApi('/classes')">
+                        <div class="endpoint-left">
+                            <span class="method-badge method-get">GET</span>
+                            <span>/api/classes</span>
+                        </div>
+                        <span style="font-size: 11px; color: var(--text-muted);">Classes &amp; Sections</span>
+                    </button>
+
+                    <button class="endpoint-btn" onclick="callApi('/subjects')">
+                        <div class="endpoint-left">
+                            <span class="method-badge method-get">GET</span>
+                            <span>/api/subjects</span>
+                        </div>
+                        <span style="font-size: 11px; color: var(--text-muted);">Subjects List</span>
+                    </button>
+
+                    <button class="endpoint-btn" onclick="callApi('/sessions')">
+                        <div class="endpoint-left">
+                            <span class="method-badge method-get">GET</span>
+                            <span>/api/sessions</span>
+                        </div>
+                        <span style="font-size: 11px; color: var(--text-muted);">Academic Sessions</span>
+                    </button>
+
+                    <!-- Core Student & Teacher Data -->
+                    <div class="endpoint-category">
+                        <i class="fa fa-user-lock"></i> Student &amp; Personal Profile
+                        <i class="fa fa-lock auth-icon" title="Requires Bearer Token"></i>
+                    </div>
+
+                    <button class="endpoint-btn" onclick="callApi('/me', 'GET', true)">
+                        <div class="endpoint-left">
+                            <span class="method-badge method-get">GET</span>
+                            <span>/api/me</span>
+                        </div>
+                        <span style="font-size: 11px; color: var(--text-muted);">My Full Profile</span>
+                    </button>
+
+                    <button class="endpoint-btn" onclick="callApi('/attendance', 'GET', true)">
+                        <div class="endpoint-left">
+                            <span class="method-badge method-get">GET</span>
+                            <span>/api/attendance</span>
+                        </div>
+                        <span style="font-size: 11px; color: var(--text-muted);">Attendance Summary</span>
+                    </button>
+
+                    <button class="endpoint-btn" onclick="callApi('/fees', 'GET', true)">
+                        <div class="endpoint-left">
+                            <span class="method-badge method-get">GET</span>
+                            <span>/api/fees</span>
+                        </div>
+                        <span style="font-size: 11px; color: var(--text-muted);">Challans &amp; Dues</span>
+                    </button>
+
+                    <button class="endpoint-btn" onclick="callApi('/homework', 'GET', true)">
+                        <div class="endpoint-left">
+                            <span class="method-badge method-get">GET</span>
+                            <span>/api/homework</span>
+                        </div>
+                        <span style="font-size: 11px; color: var(--text-muted);">Homework Tasks</span>
+                    </button>
+
+                    <button class="endpoint-btn" onclick="callApi('/exam-results', 'GET', true)">
+                        <div class="endpoint-left">
+                            <span class="method-badge method-get">GET</span>
+                            <span>/api/exam-results</span>
+                        </div>
+                        <span style="font-size: 11px; color: var(--text-muted);">Report Card / Results</span>
+                    </button>
+
+                    <button class="endpoint-btn" onclick="callApi('/notices', 'GET', true)">
+                        <div class="endpoint-left">
+                            <span class="method-badge method-get">GET</span>
+                            <span>/api/notices</span>
+                        </div>
+                        <span style="font-size: 11px; color: var(--text-muted);">Notices &amp; Circulars</span>
+                    </button>
+
+                    <button class="endpoint-btn" onclick="callApi('/timetable', 'GET', true)">
+                        <div class="endpoint-left">
+                            <span class="method-badge method-get">GET</span>
+                            <span>/api/timetable</span>
+                        </div>
+                        <span style="font-size: 11px; color: var(--text-muted);">Weekly Timetable</span>
+                    </button>
+
+                    <!-- Staff Directory & Attendance Sheet -->
+                    <div class="endpoint-category">
+                        <i class="fa fa-chalkboard-user"></i> Staff &amp; Teacher Views
+                        <i class="fa fa-lock auth-icon" title="Requires Bearer Token"></i>
+                    </div>
+
+                    <button class="endpoint-btn" onclick="callApi('/class-attendance?class_id=1&section_id=1', 'GET', true)">
+                        <div class="endpoint-left">
+                            <span class="method-badge method-get">GET</span>
+                            <span>/api/class-attendance</span>
+                        </div>
+                        <span style="font-size: 11px; color: var(--text-muted);">Class Roll Sheet</span>
+                    </button>
+
+                    <button class="endpoint-btn" onclick="callApi('/students', 'GET', true)">
+                        <div class="endpoint-left">
+                            <span class="method-badge method-get">GET</span>
+                            <span>/api/students</span>
+                        </div>
+                        <span style="font-size: 11px; color: var(--text-muted);">Student Directory</span>
+                    </button>
+
+                    <button class="endpoint-btn" onclick="callApi('/exams', 'GET', false)">
+                        <div class="endpoint-left">
+                            <span class="method-badge method-get">GET</span>
+                            <span>/api/exams</span>
+                        </div>
+                        <span style="font-size: 11px; color: var(--text-muted);">Exams Schedule</span>
+                    </button>
+                </div>
+
+                <!-- ========================================================= -->
+                <!-- MANAGE / ACTION ENDPOINTS (POST)                          -->
+                <!-- ========================================================= -->
+                <div id="sectionPostEndpoints" style="display: none;">
+                    
+                    <!-- Action 1: Mark Attendance -->
+                    <div class="action-box">
+                        <h4><i class="fa fa-clipboard-user text-success"></i> 1. Mark Class Attendance</h4>
+                        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">POST /api/save-attendance</p>
+                        <textarea id="payloadAttendance">{
+  "class_id": 1,
+  "section_id": 1,
+  "date": "2026-09-14",
+  "students": [
+    { "student_id": 1, "type": "Present", "remark": "" },
+    { "student_id": 2, "type": "Absent", "remark": "Informed sick" }
+  ]
+}</textarea>
+                        <button class="btn btn-success btn-sm w-100" onclick="callCustomPost('/save-attendance', 'payloadAttendance')">
+                            <i class="fa fa-check"></i> Submit Attendance
+                        </button>
+                    </div>
+
+                    <!-- Action 2: Create Homework -->
+                    <div class="action-box">
+                        <h4><i class="fa fa-book-open text-warning"></i> 2. Assign Homework</h4>
+                        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">POST /api/create-homework</p>
+                        <textarea id="payloadHomework">{
+  "class_id": 1,
+  "section_id": 1,
+  "subject_id": 1,
+  "homework_date": "2026-09-14",
+  "submission_date": "2026-09-15",
+  "description": "Read Chapter 4 and solve Exercise questions 1 to 5 in notebook."
+}</textarea>
+                        <button class="btn btn-primary btn-sm w-100" onclick="callCustomPost('/create-homework', 'payloadHomework')">
+                            <i class="fa fa-paper-plane"></i> Publish Homework
+                        </button>
+                    </div>
+
+                    <!-- Action 3: Enter Exam Marks -->
+                    <div class="action-box">
+                        <h4><i class="fa fa-award text-accent"></i> 3. Enter Exam Marks</h4>
+                        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">POST /api/save-marks</p>
+                        <textarea id="payloadMarks">{
+  "schedule_id": 1,
+  "students": [
+    { "student_id": 1, "theory": 68, "practical": 18, "remarks": "Very Good" },
+    { "student_id": 2, "theory": 45, "practical": 14, "remarks": "Satisfactory" }
+  ]
+}</textarea>
+                        <button class="btn btn-secondary btn-sm w-100" onclick="callCustomPost('/save-marks', 'payloadMarks')">
+                            <i class="fa fa-save"></i> Save Exam Marks
+                        </button>
+                    </div>
+
+                    <!-- Action 4: Collect Fee Payment -->
+                    <div class="action-box">
+                        <h4><i class="fa fa-money-bill-wave text-success"></i> 4. Collect Fee Payment</h4>
+                        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">POST /api/collect-fee</p>
+                        <textarea id="payloadFee">{
+  "student_fee_id": 1,
+  "amount": 2500,
+  "payment_mode": "Cash",
+  "payment_date": "2026-09-14",
+  "reference_no": "REC-98214",
+  "note": "Tuition fee collected via mobile counter"
+}</textarea>
+                        <button class="btn btn-success btn-sm w-100" onclick="callCustomPost('/collect-fee', 'payloadFee')">
+                            <i class="fa fa-receipt"></i> Record Fee Payment
+                        </button>
+                    </div>
+
+                    <!-- Action 5: Student Admission -->
+                    <div class="action-box">
+                        <h4><i class="fa fa-user-plus text-primary"></i> 5. Register Student Admission</h4>
+                        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">POST /api/create-student</p>
+                        <textarea id="payloadStudent">{
+  "name": "Hamza Tariq",
+  "admission_no": "ADM-9901",
+  "roll_no": "15",
+  "class_id": 1,
+  "section_id": 1,
+  "gender": "Male",
+  "dob": "2015-08-20",
+  "father_name": "Tariq Mehmood",
+  "parent_phone": "03001234567",
+  "address": "House 12, Street 4, Lahore"
+}</textarea>
+                        <button class="btn btn-primary btn-sm w-100" onclick="callCustomPost('/create-student', 'payloadStudent')">
+                            <i class="fa fa-id-card"></i> Register Admission
+                        </button>
+                    </div>
+
+                    <!-- Action 6: Publish Notice -->
+                    <div class="action-box">
+                        <h4><i class="fa fa-bullhorn text-warning"></i> 6. Publish School Circular / Notice</h4>
+                        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">POST /api/create-notice</p>
+                        <textarea id="payloadNotice">{
+  "title": "Annual Sports Gala 2026 Announced",
+  "message": "Dear Students & Parents, the annual sports gala will commence next Monday. Registrations are now open.",
+  "notice_type": "Event Notice",
+  "priority": "High",
+  "visible_to_student": true,
+  "visible_to_parent": true,
+  "visible_to_staff": true
+}</textarea>
+                        <button class="btn btn-warning btn-sm w-100 text-dark fw-bold" onclick="callCustomPost('/create-notice', 'payloadNotice')">
+                            <i class="fa fa-bullhorn"></i> Broadcast Notice
+                        </button>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Real-Time Response Inspector -->
+        <div class="card col-response">
+            <div class="card-header">
+                <h2><i class="fa fa-terminal text-success"></i> Real-Time JSON Inspector</h2>
+                <div class="console-meta">
+                    <span id="responseStatus" class="status-pill" style="display: none;">200 OK</span>
+                    <span id="responseLatency" class="latency-text"></span>
+                    <button class="btn btn-secondary btn-sm" onclick="copyResponse()">
+                        <i class="fa fa-copy"></i> Copy
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="requestUrlDisplay" style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-muted); margin-bottom: 8px; word-break: break-all;">
+                    Ready for requests. Click any endpoint or action button on the left.
+                </div>
+                <div class="code-container" id="responseViewer">// JSON Response will be formatted and highlighted here in real-time...</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let currentAuthToken = localStorage.getItem('school_api_token') || null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (currentAuthToken) {
+                showToken(currentAuthToken);
+            }
+        });
+
+        function switchEndpointTab(tab) {
+            const btnGet = document.getElementById('btnTabGet');
+            const btnPost = document.getElementById('btnTabPost');
+            const secGet = document.getElementById('sectionGetEndpoints');
+            const secPost = document.getElementById('sectionPostEndpoints');
+
+            if (tab === 'get') {
+                btnGet.classList.add('active');
+                btnPost.classList.remove('active');
+                secGet.style.display = 'block';
+                secPost.style.display = 'none';
+            } else {
+                btnPost.classList.add('active');
+                btnGet.classList.remove('active');
+                secPost.style.display = 'block';
+                secGet.style.display = 'none';
+            }
+        }
+
+        function toggleApiKeyVisibility() {
+            const inp = document.getElementById('apiKey');
+            const icon = document.getElementById('eyeIcon');
+            if (inp.type === 'password') {
+                inp.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                inp.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        function resetDefaults() {
+            document.getElementById('apiBaseUrl').value = 'http://localhost/school/api';
+            document.getElementById('apiKey').value = 'sk_live_demo_flutter_app_key_2026';
+            alert('Default connection parameters restored.');
+        }
+
+        function showToken(token) {
+            currentAuthToken = token;
+            localStorage.setItem('school_api_token', token);
+            document.getElementById('storedToken').textContent = token;
+            document.getElementById('tokenBox').style.display = 'block';
+        }
+
+        function clearToken() {
+            currentAuthToken = null;
+            localStorage.removeItem('school_api_token');
+            document.getElementById('tokenBox').style.display = 'none';
+            document.getElementById('simUserCard').style.display = 'none';
+        }
+
+        async function performLogin() {
+            const baseUrl = document.getElementById('apiBaseUrl').value.trim();
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const username = document.getElementById('loginIdentifier').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const btn = document.getElementById('btnLogin');
+
+            if (!apiKey) {
+                alert('Please provide an X-API-KEY in the configuration above.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Authenticating...';
+
+            const startTime = performance.now();
+            const url = `${baseUrl}/login`;
+            document.getElementById('requestUrlDisplay').textContent = `POST ${url}`;
+
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-KEY': apiKey
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password,
+                        device_name: 'Web Playground Client',
+                        device_platform: 'web'
+                    })
+                });
+
+                const latency = Math.round(performance.now() - startTime);
+                const data = await res.json();
+
+                renderConsole(res.status, res.statusText, latency, data);
+
+                if (data.success && data.data && data.data.token) {
+                    showToken(data.data.token);
+
+                    const user = data.data.user;
+                    document.getElementById('simAvatar').textContent = user.name ? user.name.charAt(0).toUpperCase() : 'U';
+                    document.getElementById('simName').textContent = user.name;
+                    document.getElementById('simEmail').textContent = user.email;
+                    document.getElementById('simRole').textContent = user.role;
+                    document.getElementById('simUserCard').style.display = 'block';
+                }
+            } catch (err) {
+                renderConsole(0, 'Network Error', Math.round(performance.now() - startTime), {
+                    error: err.message,
+                    tip: 'Ensure Apache/MySQL is running on XAMPP and localhost URL is reachable.'
+                });
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa fa-right-to-bracket"></i> Login &amp; Get Token';
+            }
+        }
+
+        async function callApi(endpoint, method = 'GET', requiresAuth = false) {
+            const baseUrl = document.getElementById('apiBaseUrl').value.trim();
+            const apiKey = document.getElementById('apiKey').value.trim();
+
+            if (!apiKey) {
+                alert('Please provide an X-API-KEY.');
+                return;
+            }
+
+            if (requiresAuth && !currentAuthToken) {
+                alert('This endpoint requires authentication. Please log in first using the Mobile User Login form on the left!');
+                return;
+            }
+
+            const startTime = performance.now();
+            const url = `${baseUrl}${endpoint}`;
+            document.getElementById('requestUrlDisplay').textContent = `${method} ${url}`;
+
+            const headers = {
+                'Content-Type': 'application/json',
+                'X-API-KEY': apiKey
+            };
+
+            if (requiresAuth && currentAuthToken) {
+                headers['Authorization'] = `Bearer ${currentAuthToken}`;
+            }
+
+            try {
+                const res = await fetch(url, {
+                    method: method,
+                    headers: headers
+                });
+
+                const latency = Math.round(performance.now() - startTime);
+                const data = await res.json();
+                renderConsole(res.status, res.statusText, latency, data);
+
+                if (endpoint === '/logout' && data.success) {
+                    clearToken();
+                }
+            } catch (err) {
+                renderConsole(0, 'Network Error', Math.round(performance.now() - startTime), {
+                    error: err.message,
+                    tip: 'Ensure your server is online and URL is correct.'
+                });
+            }
+        }
+
+        async function callCustomPost(endpoint, textareaId) {
+            const baseUrl = document.getElementById('apiBaseUrl').value.trim();
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const textarea = document.getElementById(textareaId);
+
+            if (!apiKey) {
+                alert('Please provide an X-API-KEY.');
+                return;
+            }
+
+            if (!currentAuthToken) {
+                alert('Action endpoints require a logged-in session! Please log in first on the left panel.');
+                return;
+            }
+
+            let payloadObj;
+            try {
+                payloadObj = JSON.parse(textarea.value.trim());
+            } catch (e) {
+                alert('Invalid JSON in payload textarea! Please check syntax: ' + e.message);
+                return;
+            }
+
+            const startTime = performance.now();
+            const url = `${baseUrl}${endpoint}`;
+            document.getElementById('requestUrlDisplay').textContent = `POST ${url}`;
+
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-KEY': apiKey,
+                        'Authorization': `Bearer ${currentAuthToken}`
+                    },
+                    body: JSON.stringify(payloadObj)
+                });
+
+                const latency = Math.round(performance.now() - startTime);
+                const data = await res.json();
+                renderConsole(res.status, res.statusText, latency, data);
+            } catch (err) {
+                renderConsole(0, 'Network Error', Math.round(performance.now() - startTime), {
+                    error: err.message,
+                    tip: 'Ensure server is reachable and payload is valid.'
+                });
+            }
+        }
+
+        function renderConsole(status, statusText, latency, data) {
+            const statusBadge = document.getElementById('responseStatus');
+            const latencyBadge = document.getElementById('responseLatency');
+            const viewer = document.getElementById('responseViewer');
+
+            statusBadge.style.display = 'inline-block';
+            statusBadge.textContent = `${status} ${statusText || ''}`.trim();
+            statusBadge.className = 'status-pill ' + (status >= 200 && status < 300 ? 'status-200' : 'status-400');
+
+            latencyBadge.textContent = `${latency}ms`;
+            viewer.textContent = JSON.stringify(data, null, 2);
+        }
+
+        function copyResponse() {
+            const text = document.getElementById('responseViewer').textContent;
+            navigator.clipboard.writeText(text);
+            alert('JSON Response copied to clipboard!');
+        }
+    </script>
+</body>
+</html>

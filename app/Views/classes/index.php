@@ -399,105 +399,10 @@ document.addEventListener('DOMContentLoaded', function() {
         classNameInput.focus();
     }
 
-    // ----------------------------------------------------
-    // 2. AJAX FORM SUBMISSION (ADD / UPDATE)
-    // ----------------------------------------------------
-    classForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        const nameVal = classNameInput.value.trim();
-        if (!nameVal) {
-            if (window.showToast) window.showToast('Class name is required.', 'danger');
-            classNameInput.focus();
-            return;
-        }
-
-        const isEditing = Boolean(classIdInput.value);
-        const submitUrl = classForm.getAttribute('action') || (isEditing ? URL_ROOT + '/classes/update/' + classIdInput.value : URL_ROOT + '/classes/add');
-
-        // Button Loading State
-        const prevBtnText = classSubmitText.textContent;
-        classSubmitBtn.disabled = true;
-        classSubmitIcon.className = 'fa fa-spinner fa-spin me-1';
-        classSubmitText.textContent = isEditing ? 'Updating...' : 'Saving...';
-
-        const formData = new FormData(classForm);
-        formData.append('ajax_submit', '1');
-
-        fetch(submitUrl, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json'
-            }
-        })
-        .then(response => {
-            const contentType = response.headers.get('content-type') || '';
-            if (contentType.includes('application/json')) {
-                return response.json();
-            }
-            // Fallback for redirect responses
-            return { success: response.ok, reload: true };
-        })
-        .then(data => {
-            if (data.reload) {
-                window.location.reload();
-                return;
-            }
-
-            if (data.success) {
-                if (window.showToast) {
-                    window.showToast(data.message || 'Operation completed successfully.', 'success');
-                }
-
-                if (isEditing) {
-                    // Update existing row
-                    const targetRow = document.getElementById('class-row-' + classIdInput.value);
-                    if (targetRow) {
-                        const nameLabel = targetRow.querySelector('.class-name-label');
-                        if (nameLabel) nameLabel.textContent = nameVal;
-                        targetRow.dataset.name = nameVal.toLowerCase();
-
-                        // Update edit & delete button attributes
-                        const editBtn = targetRow.querySelector('.btn-edit-class');
-                        if (editBtn) editBtn.dataset.name = nameVal;
-                        const delBtn = targetRow.querySelector('.btn-delete-class');
-                        if (delBtn) delBtn.dataset.name = nameVal;
-
-                        // Visual highlight pulse
-                        targetRow.classList.add('table-warning');
-                        setTimeout(() => targetRow.classList.remove('table-warning'), 1500);
-                    }
-                } else {
-                    // Add new row: reload cleans and updates all KPIs
-                    window.location.reload();
-                    return;
-                }
-
-                resetClassForm();
-            } else {
-                if (window.showToast) {
-                    window.showToast(data.message || 'An error occurred.', 'danger');
-                } else {
-                    alert(data.message || 'An error occurred.');
-                }
-            }
-        })
-        .catch(err => {
-            console.error('Submission Error:', err);
-            // Fallback: standard submission if network or parsing fails
-            classForm.submit();
-        })
-        .finally(() => {
-            classSubmitBtn.disabled = false;
-            classSubmitIcon.className = isEditing ? 'fa fa-check me-1' : 'fa fa-save me-1';
-            classSubmitText.textContent = prevBtnText;
-        });
-    });
+    // Add/Update uses global PJAX form interceptor in footer.php (no full page reload)
 
     // ----------------------------------------------------
-    // 3. DELETE CLASS HANDLER
+    // 2. DELETE CLASS HANDLER
     // ----------------------------------------------------
     function initDeleteButtons() {
         document.querySelectorAll('.btn-delete-class').forEach(btn => {
@@ -569,7 +474,9 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(data => {
             if (data.reload) {
-                window.location.reload();
+                if (typeof window.spaNavigate === 'function') {
+                    window.spaNavigate(window.location.href, false);
+                }
                 return;
             }
 

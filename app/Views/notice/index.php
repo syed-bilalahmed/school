@@ -15,7 +15,8 @@ $categoryColors = [
     'Holiday Announcement'      => 'badge-success-soft',
     'Event & Sports'            => 'badge-purple-soft',
     'Emergency / Urgent Alert'  => 'badge-danger-soft',
-    'Faculty & Staff Meeting'   => 'badge-dark-soft'
+    'Faculty & Staff Meeting'   => 'badge-dark-soft',
+    'Library & Reading Notice'  => 'badge-info-soft'
 ];
 
 function getRelativeTime($dateStr) {
@@ -206,20 +207,60 @@ function getRelativeTime($dateStr) {
     border-radius: 20px;
     color: #475569;
 }
+/* Summernote inside Bootstrap Modal Fixes */
+.note-editor.note-frame {
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
+    box-shadow: none !important;
+}
+.note-toolbar {
+    background: #f8fafc !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    padding: 6px 10px !important;
+}
+.note-btn {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 6px !important;
+    color: #334155 !important;
+    padding: 4px 8px !important;
+    font-size: 12px !important;
+}
+.note-btn:hover {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+}
+.note-btn.active {
+    background: #e0f2fe !important;
+    color: #0284c7 !important;
+    border-color: #bae6fd !important;
+}
+.note-editable {
+    min-height: 180px !important;
+    font-size: 14px !important;
+    line-height: 1.65 !important;
+    color: #1e293b !important;
+    background: #ffffff !important;
+}
+.note-modal {
+    z-index: 1065 !important;
+}
 </style>
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
 
 <div class="container-fluid px-3 px-md-4 py-3">
 
     <!-- Flash Alerts -->
     <?php if(!empty($_SESSION['flash_success'])): ?>
         <div class="alert alert-success alert-dismissible fade show mb-4 shadow-sm" role="alert">
-            <i class="fa fa-check-circle me-2"></i> <?php echo $_SESSION['flash_success']; unset($_SESSION['flash_success']); ?>
+            <i class="fa fa-check-circle me-2"></i> <?php echo htmlspecialchars($_SESSION['flash_success'], ENT_QUOTES, 'UTF-8'); unset($_SESSION['flash_success']); ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     <?php endif; ?>
     <?php if(!empty($_SESSION['flash_error'])): ?>
         <div class="alert alert-danger alert-dismissible fade show mb-4 shadow-sm" role="alert">
-            <i class="fa fa-exclamation-circle me-2"></i> <?php echo $_SESSION['flash_error']; unset($_SESSION['flash_error']); ?>
+            <i class="fa fa-exclamation-circle me-2"></i> <?php echo htmlspecialchars($_SESSION['flash_error'], ENT_QUOTES, 'UTF-8'); unset($_SESSION['flash_error']); ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     <?php endif; ?>
@@ -326,6 +367,7 @@ function getRelativeTime($dateStr) {
                     <option value="Event & Sports" <?php echo ($filters['category'] === 'Event & Sports') ? 'selected' : ''; ?>>Events &amp; Sports</option>
                     <option value="Emergency / Urgent Alert" <?php echo ($filters['category'] === 'Emergency / Urgent Alert') ? 'selected' : ''; ?>>Emergency Alerts</option>
                     <option value="Faculty & Staff Meeting" <?php echo ($filters['category'] === 'Faculty & Staff Meeting') ? 'selected' : ''; ?>>Staff Meetings</option>
+                    <option value="Library & Reading Notice" <?php echo ($filters['category'] === 'Library & Reading Notice') ? 'selected' : ''; ?>>📚 Library &amp; Books</option>
                 </select>
             </div>
 
@@ -441,7 +483,14 @@ function getRelativeTime($dateStr) {
 
                     <!-- Excerpt Body -->
                     <div class="notice-body-excerpt">
-                        <?php echo nl2br(htmlspecialchars($notice->message)); ?>
+                        <?php 
+                            // Render rich HTML if contains tags, otherwise nl2br safe plain text
+                            if (strip_tags($notice->message) !== $notice->message) {
+                                echo strip_tags($notice->message, '<p><br><b><strong><i><em><u><ul><ol><li><a><span><h1><h2><h3><h4><h5><h6><blockquote><code><table><thead><tbody>tr><th><td><hr>');
+                            } else {
+                                echo nl2br(htmlspecialchars($notice->message));
+                            }
+                        ?>
                     </div>
 
                     <!-- Expiry Date Notice if set -->
@@ -563,6 +612,7 @@ function getRelativeTime($dateStr) {
                                 <option value="Event & Sports">Event &amp; Sports Announcement</option>
                                 <option value="Emergency / Urgent Alert">Emergency / Urgent Alert</option>
                                 <option value="Faculty & Staff Meeting">Faculty &amp; Staff Meeting</option>
+                                <option value="Library & Reading Notice">📚 Library &amp; Reading Notice</option>
                             </select>
                         </div>
 
@@ -653,11 +703,11 @@ function getRelativeTime($dateStr) {
                             </div>
                         </div>
 
-                        <!-- Content Message Body -->
+                        <!-- Content Message Body (Rich Text WYSIWYG Editor) -->
                         <div class="col-12">
                             <label class="form-label fw-bold text-dark">Circular Memorandum Text / Body <span class="text-danger">*</span></label>
-                            <textarea name="message" class="form-control" rows="6" placeholder="Type the complete official notification text here..." required></textarea>
-                            <small class="text-muted">You can write multi-line instructions, schedules, deadlines, or directives.</small>
+                            <textarea name="message" id="addNoticeMessage" class="form-control summernote-notice" rows="6" placeholder="Type the complete official notification text here..." required></textarea>
+                            <small class="text-muted">You can write multi-line formatted instructions, bold text, lists, schedules, deadlines, or directives.</small>
                         </div>
                     </div>
                 </div>
@@ -706,6 +756,7 @@ function getRelativeTime($dateStr) {
                                 <option value="Event & Sports">Event &amp; Sports Announcement</option>
                                 <option value="Emergency / Urgent Alert">Emergency / Urgent Alert</option>
                                 <option value="Faculty & Staff Meeting">Faculty &amp; Staff Meeting</option>
+                                <option value="Library & Reading Notice">📚 Library &amp; Reading Notice</option>
                             </select>
                         </div>
 
@@ -761,10 +812,10 @@ function getRelativeTime($dateStr) {
                             <small class="text-muted">Upload a new PDF to replace the existing document, or leave blank to keep current.</small>
                         </div>
 
-                        <!-- Message Body -->
+                        <!-- Message Body (Rich Text WYSIWYG Editor) -->
                         <div class="col-12">
                             <label class="form-label fw-bold text-dark">Circular Body Text <span class="text-danger">*</span></label>
-                            <textarea name="message" id="editNoticeMessage" class="form-control" rows="6" required></textarea>
+                            <textarea name="message" id="editNoticeMessage" class="form-control summernote-notice" rows="6" required></textarea>
                         </div>
                     </div>
                 </div>
@@ -820,7 +871,7 @@ function getRelativeTime($dateStr) {
 
                 <div class="mb-4">
                     <div class="text-uppercase text-muted small fw-bold mb-2" style="letter-spacing: 1px;">Circular Directives:</div>
-                    <div id="modalViewContent" class="p-3 bg-light rounded border text-dark" style="white-space: pre-line; line-height: 1.7; font-size: 14px; min-height: 120px;"></div>
+                    <div id="modalViewContent" class="p-3 bg-light rounded border text-dark" style="line-height: 1.7; font-size: 14px; min-height: 120px; overflow-wrap: break-word;"></div>
                 </div>
 
                 <div id="modalViewAttachmentBox" class="mb-3 d-none">
@@ -962,7 +1013,15 @@ function getRelativeTime($dateStr) {
         const titleEl = document.getElementById('modalViewTitle');
         if (titleEl) titleEl.textContent = btn.dataset.title || '';
         const contentEl = document.getElementById('modalViewContent');
-        if (contentEl) contentEl.textContent = btn.dataset.content || '';
+        if (contentEl) {
+            const rawContent = btn.dataset.content || '';
+            // If content has HTML tags, render as HTML; otherwise format line breaks
+            if (/<[a-z][\s\S]*>/i.test(rawContent)) {
+                contentEl.innerHTML = rawContent;
+            } else {
+                contentEl.innerHTML = rawContent.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+            }
+        }
         const authorEl = document.getElementById('modalViewAuthor');
         if (authorEl) authorEl.textContent = btn.dataset.author || '';
         const printLinkEl = document.getElementById('modalPrintLink');
@@ -1006,7 +1065,7 @@ function getRelativeTime($dateStr) {
         }
     });
 
-    // Event Delegation: Edit Notice Pre-fill Handler
+    // Edit Notice Pre-fill Handler
     document.addEventListener('click', function(e) {
         const btn = e.target.closest('.btn-edit-notice');
         if (!btn) return;
@@ -1031,8 +1090,15 @@ function getRelativeTime($dateStr) {
                     if (pubDateEl) pubDateEl.value = n.publish_date;
                     const expDateEl = document.getElementById('editNoticeExpiryDate');
                     if (expDateEl) expDateEl.value = n.expiry_date || '';
+                    
+                    // Set textarea & Summernote code
                     const msgEl = document.getElementById('editNoticeMessage');
-                    if (msgEl) msgEl.value = n.message;
+                    if (msgEl) {
+                        msgEl.value = n.message || '';
+                        if (window.jQuery && typeof jQuery.fn.summernote === 'function') {
+                            jQuery('#editNoticeMessage').summernote('code', n.message || '');
+                        }
+                    }
 
                     const visStudent = document.getElementById('editVisStudent');
                     if (visStudent) visStudent.checked = (n.is_visible_to_student === 'yes');
@@ -1118,3 +1184,60 @@ function getRelativeTime($dateStr) {
 </script>
 
 <?php require APPROOT . '/Views/layouts/footer.php'; ?>
+
+<!-- jQuery & Summernote Lite (WYSIWYG Rich Text Editor) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
+<script>
+(function() {
+    function initNoticeSummernote() {
+        if (!window.jQuery || typeof jQuery.fn.summernote !== 'function') return;
+
+        var summernoteConfig = {
+            placeholder: 'Compose official circular content here with formatting, lists, tables, links...',
+            tabsize: 2,
+            height: 200,
+            dialogsInBody: true,
+            toolbar: [
+                ['style', ['style', 'bold', 'italic', 'underline', 'clear']],
+                ['font', ['strikethrough', 'superscript', 'subscript']],
+                ['color', ['color']],
+                ['para', ['ul', 'ol', 'paragraph']],
+                ['table', ['table']],
+                ['insert', ['link', 'hr']],
+                ['view', ['fullscreen', 'codeview', 'help']]
+            ]
+        };
+
+        // Initialize Add Notice Editor
+        var $addMsg = jQuery('#addNoticeMessage');
+        if ($addMsg.length && !$addMsg.data('summernote')) {
+            $addMsg.summernote(summernoteConfig);
+        }
+
+        // Initialize Edit Notice Editor
+        var $editMsg = jQuery('#editNoticeMessage');
+        if ($editMsg.length && !$editMsg.data('summernote')) {
+            $editMsg.summernote(summernoteConfig);
+        }
+
+        // Reset Add Modal Summernote on Open
+        var addModalEl = document.getElementById('addNoticeModal');
+        if (addModalEl && !addModalEl._snBound) {
+            addModalEl._snBound = true;
+            addModalEl.addEventListener('show.bs.modal', function() {
+                if (window.jQuery && typeof jQuery.fn.summernote === 'function') {
+                    jQuery('#addNoticeMessage').summernote('code', '');
+                }
+            });
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initNoticeSummernote);
+    } else {
+        initNoticeSummernote();
+    }
+    document.addEventListener('page:loaded', initNoticeSummernote);
+})();
+</script>

@@ -10,8 +10,8 @@ class SchemaSync {
         }
 
         // Performance Lock: Prevent running 80+ CREATE/SHOW queries on EVERY single request
-        $lockFile = defined('APPROOT') ? (APPROOT . '/schema_synced_v3.5.lock') : (__DIR__ . '/../schema_synced_v3.5.lock');
-        if (file_exists($lockFile) || !empty($_SESSION['schema_v3_5_synced'])) {
+        $lockFile = defined('APPROOT') ? (APPROOT . '/schema_synced_v3.6.lock') : (__DIR__ . '/../schema_synced_v3.6.lock');
+        if (file_exists($lockFile) || !empty($_SESSION['schema_v3_6_synced'])) {
             self::$synced = true;
             return;
         }
@@ -827,9 +827,47 @@ class SchemaSync {
             self::addColumnIfNotExists('front_cms_settings', 'enable_alumni', "ENUM('yes', 'no') DEFAULT 'yes'");
             self::addColumnIfNotExists('front_cms_settings', 'enable_requirements', "ENUM('yes', 'no') DEFAULT 'yes'");
 
+            // API Keys Table (Mobile Apps & Third-Party Integration)
+            $db->query("CREATE TABLE IF NOT EXISTS api_keys (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                school_id INT NOT NULL DEFAULT 1,
+                client_name VARCHAR(100) NOT NULL,
+                api_key VARCHAR(64) NOT NULL UNIQUE,
+                is_active TINYINT(1) DEFAULT 1,
+                rate_limit_per_min INT DEFAULT 120,
+                last_used_at DATETIME NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_school_apikey (school_id, api_key),
+                INDEX idx_apikey (api_key)
+            )");
+            $db->execute();
+
+            $db->query("SELECT id FROM api_keys LIMIT 1");
+            if (!$db->single()) {
+                $db->query("INSERT INTO api_keys (school_id, client_name, api_key, is_active, rate_limit_per_min) 
+                            VALUES (1, 'Official Mobile App (Flutter / React Native)', 'sk_live_demo_flutter_app_key_2026', 1, 120)");
+                $db->execute();
+            }
+
+            // Mobile User Session Bearer Tokens Table
+            $db->query("CREATE TABLE IF NOT EXISTS api_user_tokens (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                school_id INT NOT NULL DEFAULT 1,
+                user_id INT NOT NULL,
+                api_key_id INT NULL,
+                token VARCHAR(96) NOT NULL UNIQUE,
+                device_name VARCHAR(100) NULL,
+                device_platform VARCHAR(50) NULL,
+                expires_at DATETIME NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_token (token),
+                INDEX idx_user_school (user_id, school_id)
+            )");
+            $db->execute();
+
             self::$synced = true;
             $_SESSION['schema_synced'] = true;
-            $_SESSION['schema_v3_5_synced'] = true;
+            $_SESSION['schema_v3_6_synced'] = true;
             @file_put_contents($lockFile, date('Y-m-d H:i:s'));
         } catch (Exception $e) {
             error_log("SchemaSync error: " . $e->getMessage());

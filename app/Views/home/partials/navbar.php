@@ -223,14 +223,22 @@ $noticeCount = is_array($publicNotices) ? count($publicNotices) : 0;
 
 /* STRICT SINGLE-LINE COMPACT NAVBAR FIX (Zero vertical wrapping) */
 .front-navbar .navbar-brand {
-    font-size: 1.02rem !important;
+    font-size: 1.18rem !important;
     white-space: nowrap !important;
     flex-shrink: 0 !important;
-    margin-right: 12px !important;
+    margin-right: 14px !important;
 }
 
 .front-navbar .navbar-brand img {
-    height: 38px !important;
+    height: 52px !important;
+    max-height: 52px !important;
+    max-width: 170px !important;
+    object-fit: contain !important;
+    transition: transform 0.25s ease !important;
+}
+
+.front-navbar .navbar-brand:hover img {
+    transform: scale(1.04);
 }
 
 .front-navbar .nav-link {
@@ -429,13 +437,13 @@ $noticeCount = is_array($publicNotices) ? count($publicNotices) : 0;
         <!-- Brand / Logo -->
         <a class="navbar-brand d-flex align-items-center gap-2" href="<?php echo URLROOT; ?>">
             <?php if(!empty($cmsLogo)): ?>
-                <img src="<?php echo URLROOT . '/' . htmlspecialchars($cmsLogo); ?>" height="38" alt="<?php echo htmlspecialchars($schoolName, ENT_QUOTES, 'UTF-8'); ?>" style="max-width: 130px; object-fit: contain;">
+                <img src="<?php echo URLROOT . '/' . htmlspecialchars($cmsLogo); ?>" height="52" alt="<?php echo htmlspecialchars($schoolName, ENT_QUOTES, 'UTF-8'); ?>" style="height: 52px; max-height: 52px; max-width: 170px; object-fit: contain;">
             <?php else: ?>
-                <div class="brand-icon-emblem" style="width: 36px; height: 36px; font-size: 1.05rem;">
+                <div class="brand-icon-emblem" style="width: 44px; height: 44px; font-size: 1.25rem;">
                     <i class="fa fa-graduation-cap"></i>
                 </div>
             <?php endif; ?>
-            <span class="d-none d-sm-inline fw-bold text-truncate" style="max-width: 250px;"><?php echo htmlspecialchars($schoolName, ENT_QUOTES, 'UTF-8'); ?></span>
+            <span class="d-none d-sm-inline fw-bold text-truncate" style="max-width: 280px; font-size: 1.18rem; letter-spacing: -0.01em;"><?php echo htmlspecialchars($schoolName, ENT_QUOTES, 'UTF-8'); ?></span>
         </a>
 
         <!-- Mobile Toggler -->

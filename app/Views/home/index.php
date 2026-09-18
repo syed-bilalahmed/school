@@ -17,6 +17,15 @@ elseif ($theme === 'dark') $themeColor = '#0f172a';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($schoolName, ENT_QUOTES, 'UTF-8'); ?> &mdash; Excellence in Education</title>
     
+    <!-- Dynamic Favicon -->
+    <?php if(!empty($siteSettings['logo'])): ?>
+        <link rel="icon" type="image/png" href="<?php echo URLROOT . '/' . htmlspecialchars($siteSettings['logo']); ?>">
+        <link rel="shortcut icon" href="<?php echo URLROOT . '/' . htmlspecialchars($siteSettings['logo']); ?>">
+        <link rel="apple-touch-icon" href="<?php echo URLROOT . '/' . htmlspecialchars($siteSettings['logo']); ?>">
+    <?php else: ?>
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
+    <?php endif; ?>
+
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- FontAwesome 6 -->

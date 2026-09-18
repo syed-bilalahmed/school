@@ -94,13 +94,13 @@
     <!-- FLASH ALERTS -->
     <?php if(!empty($_SESSION['flash_success'])): ?>
         <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-3" role="alert">
-            <i class="fa fa-check-circle me-2"></i> <?php echo $_SESSION['flash_success']; unset($_SESSION['flash_success']); ?>
+            <i class="fa fa-check-circle me-2"></i> <?php echo htmlspecialchars($_SESSION['flash_success'], ENT_QUOTES, 'UTF-8'); unset($_SESSION['flash_success']); ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     <?php endif; ?>
     <?php if(!empty($_SESSION['flash_error'])): ?>
         <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-3" role="alert">
-            <i class="fa fa-exclamation-circle me-2"></i> <?php echo $_SESSION['flash_error']; unset($_SESSION['flash_error']); ?>
+            <i class="fa fa-exclamation-circle me-2"></i> <?php echo htmlspecialchars($_SESSION['flash_error'], ENT_QUOTES, 'UTF-8'); unset($_SESSION['flash_error']); ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     <?php endif; ?>

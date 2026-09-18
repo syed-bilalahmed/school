@@ -3,6 +3,9 @@
     RewriteEngine On
     RewriteBase /school/
 
+    # Pass Authorization header to PHP for API Bearer tokens
+    SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+
     # Direct access to public folder assets
     RewriteRule ^public/index\.php$ - [L]
     RewriteRule ^public/(.*)$ public/$1 [L]

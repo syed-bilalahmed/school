@@ -124,8 +124,23 @@ class HealthController extends Controller {
             ]
         ];
 
-        // One-Click DB Index Optimization Trigger
+        // One-Click DB Index Optimization Trigger (admin-only)
         if (isset($_GET['action']) && $_GET['action'] === 'optimize_db') {
+            if (class_exists('AuthGuard')) {
+                AuthGuard::requireAuth();
+                if (!AuthGuard::hasPermission('manage_settings') && (($_SESSION['user_role'] ?? '') !== 'super_admin')) {
+                    http_response_code(403);
+                    header('Content-Type: application/json; charset=utf-8');
+                    echo json_encode(['success' => false, 'message' => 'Unauthorized. Admin access required.']);
+                    exit;
+                }
+            } elseif (!isset($_SESSION['user_id'])) {
+                http_response_code(401);
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode(['success' => false, 'message' => 'Authentication required.']);
+                exit;
+            }
+
             $indexResults = class_exists('SchemaSync') ? SchemaSync::applyPerformanceIndexes() : [];
             if (isset($_GET['view']) && $_GET['view'] == '1') {
                 $payload['index_results'] = $indexResults;

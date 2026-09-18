@@ -8,7 +8,7 @@ class NoticeController extends Controller {
         $userRole = $_SESSION['user_role'] ?? '';
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if (!in_array($userRole, ['admin', 'super_admin']) && !AuthGuard::hasPermission('manage_communication')) {
+            if (!in_array($userRole, ['admin', 'super_admin', 'librarian']) && !AuthGuard::hasPermission('manage_communication')) {
                 AuthGuard::requirePermission('manage_communication');
             }
             if (class_exists('AuthGuard')) {
@@ -32,7 +32,7 @@ class NoticeController extends Controller {
     public function index(){
         $noticeModel = $this->model('Notice');
         $userRole = $_SESSION['user_role'] ?? 'admin';
-        $isAdmin = in_array($userRole, ['admin', 'super_admin']) || AuthGuard::hasPermission('manage_communication');
+        $isAdmin = in_array($userRole, ['admin', 'super_admin', 'librarian']) || AuthGuard::hasPermission('manage_communication');
 
         // Handle direct POST notice creation
         if($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin){
@@ -90,7 +90,7 @@ class NoticeController extends Controller {
      */
     private function saveNotice($id = null){
         $userRole = $_SESSION['user_role'] ?? 'admin';
-        $isAdmin = in_array($userRole, ['admin', 'super_admin']) || AuthGuard::hasPermission('manage_communication');
+        $isAdmin = in_array($userRole, ['admin', 'super_admin', 'librarian']) || AuthGuard::hasPermission('manage_communication');
 
         if (!$isAdmin) {
             $this->respond([
@@ -359,7 +359,7 @@ class NoticeController extends Controller {
      */
     public function delete($id = null){
         $userRole = $_SESSION['user_role'] ?? 'admin';
-        $isAdmin = in_array($userRole, ['admin', 'super_admin']) || AuthGuard::hasPermission('manage_communication');
+        $isAdmin = in_array($userRole, ['admin', 'super_admin', 'librarian']) || AuthGuard::hasPermission('manage_communication');
 
         if (!$isAdmin) {
             $this->respond(['status' => 'error', 'message' => 'Unauthorized action.'], 403);

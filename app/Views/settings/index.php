@@ -83,6 +83,11 @@
                         <i class="fab fa-whatsapp text-success me-2"></i>WhatsApp Helpdesk
                     </button>
                 </li>
+                <li class="nav-item">
+                    <button class="nav-link py-2 px-3 fw-semibold <?php echo ($activeTab === 'api') ? 'active' : ''; ?>" id="api-tab" data-bs-toggle="pill" data-bs-target="#tab-api" type="button" role="tab">
+                        <i class="fa fa-key text-warning me-2"></i>Mobile &amp; API Keys
+                    </button>
+                </li>
             </ul>
         </div>
     </div>
@@ -1705,6 +1710,301 @@
             </form>
         </div>
 
+        <!-- ============================================================= -->
+        <!-- TAB 8: MOBILE APP & API KEYS MANAGEMENT                       -->
+        <!-- ============================================================= -->
+        <div class="tab-pane fade <?php echo ($activeTab === 'api') ? 'show active' : ''; ?>" id="tab-api" role="tabpanel">
+            <div class="row g-4">
+                <!-- Top Summary & Action Bar -->
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                                <div>
+                                    <h5 class="fw-bold text-dark mb-1">
+                                        <i class="fa fa-mobile-screen-button text-primary me-2"></i>Mobile App &amp; RESTful API Gateway
+                                    </h5>
+                                    <p class="text-muted small mb-0">
+                                        Issue secure client API Keys for your Flutter, React Native, iOS, and Android applications. Each key is securely bound to this campus and tracks usage.
+                                    </p>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <a href="<?php echo URLROOT; ?>/api-tester" target="_blank" class="btn btn-outline-warning btn-sm px-3">
+                                        <i class="fa fa-flask me-1"></i> Open API Playground
+                                    </a>
+                                    <a href="<?php echo URLROOT; ?>/api/status" target="_blank" class="btn btn-outline-info btn-sm px-3">
+                                        <i class="fa fa-heartbeat me-1"></i> API Health Check
+                                    </a>
+                                    <button type="button" class="btn btn-primary btn-sm px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#generateApiKeyModal">
+                                        <i class="fa fa-plus me-1"></i> Generate API Key
+                                    </button>
+                                </div>
+                            </div>
+
+                            <?php if(!empty($_SESSION['newly_generated_key'])): ?>
+                                <div class="alert alert-warning border-0 shadow-sm mt-3 mb-0 d-flex align-items-center justify-content-between gap-3 p-3">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="fa fa-key text-warning fs-4"></i>
+                                        <div>
+                                            <div class="fw-bold text-dark">New Secret API Key Generated!</div>
+                                            <div class="small text-muted">Copy this key now and securely provide it to your mobile developer:</div>
+                                            <code class="fw-bold text-danger fs-6 select-all"><?php echo htmlspecialchars($_SESSION['newly_generated_key']); ?></code>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-dark px-3 copy-btn" onclick="navigator.clipboard.writeText('<?php echo htmlspecialchars($_SESSION['newly_generated_key']); ?>'); alert('API Key copied to clipboard!');">
+                                        <i class="fa fa-copy me-1"></i> Copy Key
+                                    </button>
+                                </div>
+                                <?php unset($_SESSION['newly_generated_key']); ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API Keys Table Card -->
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                            <h6 class="fw-bold mb-0 text-dark">
+                                <i class="fa fa-shield-halved text-success me-2"></i>Active API Keys
+                            </h6>
+                            <span class="badge bg-light text-dark border">
+                                <?php echo count($data['api_keys'] ?? []); ?> Registered
+                            </span>
+                        </div>
+                        <div class="card-body p-0">
+                            <?php if(empty($data['api_keys'])): ?>
+                                <div class="text-center py-5">
+                                    <div class="avatar-lg bg-light text-muted rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width:64px;height:64px;">
+                                        <i class="fa fa-key fs-3"></i>
+                                    </div>
+                                    <h6 class="fw-bold text-dark">No API Keys Generated Yet</h6>
+                                    <p class="text-muted small mb-3">Create your first API key so your mobile app developer can connect to this campus.</p>
+                                    <button type="button" class="btn btn-primary btn-sm px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#generateApiKeyModal">
+                                        <i class="fa fa-plus me-1"></i> Generate First Key
+                                    </button>
+                                </div>
+                            <?php else: ?>
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="table-light small text-muted text-uppercase">
+                                            <tr>
+                                                <th class="ps-3">Client / Application</th>
+                                                <th>API Secret Key</th>
+                                                <th>Rate Limit</th>
+                                                <th>Last Used</th>
+                                                <th>Status</th>
+                                                <th class="text-end pe-3">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="small">
+                                            <?php foreach($data['api_keys'] as $ak): ?>
+                                                <tr>
+                                                    <td class="ps-3">
+                                                        <div class="fw-bold text-dark"><?php echo htmlspecialchars($ak->client_name); ?></div>
+                                                        <div class="text-muted" style="font-size:0.75rem;">Created: <?php echo date('M d, Y', strtotime($ak->created_at)); ?></div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="d-flex align-items-center gap-1">
+                                                            <input type="password" readonly class="form-control form-control-sm font-monospace border-0 bg-light py-0 px-1" value="<?php echo htmlspecialchars($ak->api_key); ?>" id="key_input_<?php echo $ak->id; ?>" style="width:160px; font-size:0.78rem;">
+                                                            <button type="button" class="btn btn-sm btn-link text-muted p-0 ms-1" title="Toggle visibility" onclick="const inp = document.getElementById('key_input_<?php echo $ak->id; ?>'); inp.type = (inp.type === 'password') ? 'text' : 'password';">
+                                                                <i class="fa fa-eye"></i>
+                                                            </button>
+                                                            <button type="button" class="btn btn-sm btn-link text-primary p-0 ms-1" title="Copy key" onclick="navigator.clipboard.writeText('<?php echo htmlspecialchars($ak->api_key); ?>'); alert('API Key copied!');">
+                                                                <i class="fa fa-copy"></i>
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-secondary-subtle text-secondary border">
+                                                            <?php echo (int)$ak->rate_limit_per_min; ?> req/min
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <?php if(!empty($ak->last_used_at)): ?>
+                                                            <span class="text-dark"><?php echo date('M d, H:i', strtotime($ak->last_used_at)); ?></span>
+                                                        <?php else: ?>
+                                                            <span class="text-muted fst-italic">Never used</span>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                    <td>
+                                                        <?php if((int)$ak->is_active === 1): ?>
+                                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">Active</span>
+                                                        <?php else: ?>
+                                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">Revoked</span>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                    <td class="text-end pe-3">
+                                                        <div class="d-inline-flex gap-1">
+                                                            <form action="<?php echo URLROOT; ?>/setting/index?tab=api" method="post" class="d-inline">
+                                                                <input type="hidden" name="tab" value="api">
+                                                                <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+                                                                <input type="hidden" name="toggle_api_key" value="1">
+                                                                <input type="hidden" name="key_id" value="<?php echo (int)$ak->id; ?>">
+                                                                <button type="submit" class="btn btn-outline-<?php echo ((int)$ak->is_active === 1) ? 'warning' : 'success'; ?> btn-sm py-0 px-2" title="<?php echo ((int)$ak->is_active === 1) ? 'Deactivate' : 'Activate'; ?>">
+                                                                    <i class="fa fa-<?php echo ((int)$ak->is_active === 1) ? 'pause' : 'play'; ?>"></i>
+                                                                </button>
+                                                            </form>
+
+                                                            <form action="<?php echo URLROOT; ?>/setting/index?tab=api" method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to permanently delete this API Key? Any mobile apps using it will immediately lose access.');">
+                                                                <input type="hidden" name="tab" value="api">
+                                                                <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+                                                                <input type="hidden" name="delete_api_key" value="1">
+                                                                <input type="hidden" name="key_id" value="<?php echo (int)$ak->id; ?>">
+                                                                <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" title="Delete & Revoke">
+                                                                    <i class="fa fa-trash"></i>
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Developer Quick-Start & Integration Guide -->
+                <div class="col-lg-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <h6 class="fw-bold mb-0 text-dark">
+                                <i class="fa fa-code text-primary me-2"></i>Developer Quick-Start
+                            </h6>
+                        </div>
+                        <div class="card-body p-3">
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted text-uppercase mb-1">API Base URL</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="text" readonly class="form-control font-monospace bg-light" value="<?php echo URLROOT; ?>/api" id="apiBaseUrlInput">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="navigator.clipboard.writeText('<?php echo URLROOT; ?>/api'); alert('Base URL copied!');">
+                                        <i class="fa fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted text-uppercase mb-1">Required Headers</label>
+                                <div class="p-2 bg-dark rounded font-monospace text-light" style="font-size:0.75rem; line-height: 1.4;">
+                                    <div class="text-info">Content-Type: <span class="text-white">application/json</span></div>
+                                    <div class="text-warning">X-API-KEY: <span class="text-white">sk_live_...</span></div>
+                                    <div class="text-success">Authorization: <span class="text-white">Bearer usr_...</span></div>
+                                </div>
+                            </div>
+
+                            <label class="form-label small fw-bold text-muted text-uppercase mb-1">Flutter / Dart Snippet</label>
+                            <div class="p-2 bg-dark rounded font-monospace text-light mb-3" style="font-size:0.73rem; overflow-x: auto;">
+                                <span class="text-muted">// In your Flutter ApiService:</span><br>
+                                <span class="text-info">final</span> res = <span class="text-info">await</span> http.get(<br>
+                                &nbsp;&nbsp;Uri.parse(<span class="text-warning">'<?php echo URLROOT; ?>/api/status'</span>),<br>
+                                &nbsp;&nbsp;headers: {<br>
+                                &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-warning">'X-API-KEY'</span>: <span class="text-white">'YOUR_KEY'</span>,<br>
+                                &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-warning">'Content-Type'</span>: <span class="text-white">'application/json'</span><br>
+                                &nbsp;&nbsp;}<br>
+                                );
+                            </div>
+
+                            <div class="accordion accordion-flush" id="apiEndpointsAccordion">
+                                <div class="accordion-item border-0">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed py-2 px-0 small fw-bold text-primary bg-transparent" type="button" data-bs-toggle="collapse" data-bs-target="#endpointsList">
+                                            <i class="fa fa-list me-1"></i> View Available Endpoints (9)
+                                        </button>
+                                    </h2>
+                                    <div id="endpointsList" class="accordion-collapse collapse" data-bs-parent="#apiEndpointsAccordion">
+                                        <div class="accordion-body px-0 pt-2 pb-0 small">
+                                            <ul class="list-unstyled mb-0" style="font-size:0.75rem;">
+                                                <li class="py-1 border-bottom d-flex justify-content-between">
+                                                    <span><code>GET /api/status</code></span>
+                                                    <span class="badge bg-light text-dark border">Ping</span>
+                                                </li>
+                                                <li class="py-1 border-bottom d-flex justify-content-between">
+                                                    <span><code>GET /api/school</code></span>
+                                                    <span class="badge bg-light text-dark border">Campus Info</span>
+                                                </li>
+                                                <li class="py-1 border-bottom d-flex justify-content-between">
+                                                    <span><code>POST /api/login</code></span>
+                                                    <span class="badge bg-primary text-white">Auth Token</span>
+                                                </li>
+                                                <li class="py-1 border-bottom d-flex justify-content-between">
+                                                    <span><code>POST /api/logout</code></span>
+                                                    <span class="badge bg-light text-dark border">Revoke</span>
+                                                </li>
+                                                <li class="py-1 border-bottom d-flex justify-content-between">
+                                                    <span><code>GET /api/me</code></span>
+                                                    <span class="badge bg-success-subtle text-success">Profile</span>
+                                                </li>
+                                                <li class="py-1 border-bottom d-flex justify-content-between">
+                                                    <span><code>GET /api/attendance</code></span>
+                                                    <span class="badge bg-info-subtle text-info">Attendance</span>
+                                                </li>
+                                                <li class="py-1 border-bottom d-flex justify-content-between">
+                                                    <span><code>GET /api/fees</code></span>
+                                                    <span class="badge bg-warning-subtle text-dark">Challans</span>
+                                                </li>
+                                                <li class="py-1 border-bottom d-flex justify-content-between">
+                                                    <span><code>GET /api/notices</code></span>
+                                                    <span class="badge bg-light text-dark border">Circulars</span>
+                                                </li>
+                                                <li class="py-1 d-flex justify-content-between">
+                                                    <span><code>GET /api/timetable</code></span>
+                                                    <span class="badge bg-light text-dark border">Schedule</span>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Modal: Generate API Key -->
+<div class="modal fade" id="generateApiKeyModal" tabindex="-1" aria-labelledby="generateApiKeyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white py-3">
+                <h5 class="modal-title fw-bold" id="generateApiKeyModalLabel">
+                    <i class="fa fa-key me-2"></i>Generate Mobile App API Key
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="<?php echo URLROOT; ?>/setting/index?tab=api" method="post">
+                <input type="hidden" name="tab" value="api">
+                <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+                <input type="hidden" name="generate_api_key" value="1">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark"><i class="fa fa-mobile-screen me-2 text-primary"></i>Application / Client Name <span class="text-danger">*</span></label>
+                        <input type="text" name="client_name" class="form-control" placeholder="e.g. Official Flutter Android App, iOS Parent Portal" required>
+                        <div class="form-text text-muted" style="font-size: 0.78rem;">
+                            Identifies the application connecting to this campus.
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark"><i class="fa fa-gauge me-2 text-warning"></i>Rate Limit (Requests per minute)</label>
+                        <input type="number" name="rate_limit" class="form-control" value="120" min="10" max="600">
+                        <div class="form-text text-muted" style="font-size: 0.78rem;">
+                            Protects against Denial-of-Service and excessive polling (default: 120 req/min).
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2">
+                    <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold">
+                        <i class="fa fa-check me-1"></i> Generate &amp; Issue Key
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 

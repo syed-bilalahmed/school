@@ -111,4 +111,17 @@ class Controller {
             AuthGuard::verifyCSRF();
         }
     }
+
+    /**
+     * Detect AJAX, PJAX, or JSON API requests
+     */
+    protected function isAjaxRequest(){
+        if (class_exists('AuthGuard')) {
+            return AuthGuard::isAjaxRequest();
+        }
+        return !empty($_SERVER['HTTP_X_REQUESTED_WITH'])
+            || !empty($_SERVER['HTTP_X_PJAX'])
+            || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)
+            || isset($_POST['ajax_submit']);
+    }
 }

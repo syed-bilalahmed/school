@@ -31,13 +31,13 @@ $livechatCustomScript = $siteSettings['livechat_custom_script'] ?? '';
             <div class="col-lg-4 col-md-6 mb-4 mb-lg-0">
                 <div class="d-flex align-items-center gap-2 mb-3">
                     <?php if(!empty($cmsLogo)): ?>
-                        <img src="<?php echo URLROOT . '/' . htmlspecialchars($cmsLogo); ?>" height="42" alt="<?php echo htmlspecialchars($schoolName, ENT_QUOTES, 'UTF-8'); ?>" style="max-width: 140px; object-fit: contain;">
+                        <img src="<?php echo URLROOT . '/' . htmlspecialchars($cmsLogo); ?>" height="52" alt="<?php echo htmlspecialchars($schoolName, ENT_QUOTES, 'UTF-8'); ?>" style="height: 52px; max-height: 52px; max-width: 170px; object-fit: contain;">
                     <?php else: ?>
-                        <div class="brand-icon-emblem">
+                        <div class="brand-icon-emblem" style="width: 46px; height: 46px; font-size: 1.3rem;">
                             <i class="fa fa-graduation-cap"></i>
                         </div>
                     <?php endif; ?>
-                    <span class="footer-brand-title mb-0"><?php echo htmlspecialchars($schoolName, ENT_QUOTES, 'UTF-8'); ?></span>
+                    <span class="footer-brand-title mb-0" style="font-size: 1.25rem; font-weight: 800;"><?php echo htmlspecialchars($schoolName, ENT_QUOTES, 'UTF-8'); ?></span>
                 </div>
                 <p class="footer-bio">
                     Dedicated to academic distinction, innovative leadership, and holistic character development. Empowering generations of visionary global thinkers and future leaders.

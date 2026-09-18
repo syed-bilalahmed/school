@@ -166,12 +166,40 @@ class AuthGuard {
     }
 
     /**
-     * Requires the user to have a specific permission, otherwise aborts
+     * Detect AJAX, PJAX, or JSON API requests
+     */
+    public static function isAjaxRequest() {
+        return (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+            || !empty($_SERVER['HTTP_X_PJAX'])
+            || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)
+            || isset($_POST['ajax_submit']);
+    }
+
+    /**
+     * Requires the user to have a specific permission, otherwise aborts gracefully
      */
     public static function requirePermission($permission_key) {
-        if (!self::hasPermission($permission_key)) {
-            die("Access Denied: You do not have permission to perform this action.");
+        if (self::hasPermission($permission_key)) {
+            return;
         }
+
+        if (self::isAjaxRequest()) {
+            if (ob_get_length()) {
+                ob_clean();
+            }
+            http_response_code(403);
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode([
+                'success' => false,
+                'message' => 'Access Denied: You do not have permission to perform this action.',
+                'error' => 'forbidden'
+            ]);
+            exit;
+        }
+
+        $_SESSION['flash_error'] = 'Access Denied: You do not have permission to access this page.';
+        header('Location: ' . URLROOT . '/admin/dashboard');
+        exit;
     }
 
     /**

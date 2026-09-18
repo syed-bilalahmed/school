@@ -42,7 +42,9 @@ class Router {
         'requirement'        => ['HomeController', 'requirements'],
         'careers'            => ['HomeController', 'requirements'],
         'jobs'               => ['HomeController', 'requirements'],
-        'tenders'            => ['HomeController', 'requirements']
+        'tenders'            => ['HomeController', 'requirements'],
+        'api-tester'         => ['ApiController', 'tester'],
+        'api-playground'     => ['ApiController', 'tester']
     ];
 
     // Explicit Controller Alias Map for Common Irregular Names & Plurals
@@ -111,7 +113,8 @@ class Router {
         'auth'             => 'Auth',
         'admin'            => 'Admin',
         'home'             => 'Home',
-        'profile'          => 'Profile'
+        'profile'          => 'Profile',
+        'api'              => 'Api'
     ];
 
     public function __construct(){
@@ -255,15 +258,19 @@ class Router {
     protected function handleNotFound(){
         http_response_code(404);
 
-        $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') 
+        $isApi = (isset($_GET['url']) && strpos($_GET['url'], 'api') === 0)
+              || (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/api') !== false);
+
+        $isAjax = $isApi
+               || (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') 
                || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false);
 
         if ($isAjax) {
-            header('Content-Type: application/json');
+            header('Content-Type: application/json; charset=utf-8');
             echo json_encode([
                 'success' => false,
-                'error' => 'Route or action not found',
-                'redirect_url' => URLROOT . '/admin/dashboard'
+                'message' => 'API endpoint or action was not found.',
+                'error' => 'Route not found'
             ]);
             exit;
         }

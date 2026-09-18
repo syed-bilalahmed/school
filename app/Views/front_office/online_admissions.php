@@ -525,7 +525,7 @@ if (!function_exists('oa_relative_time')) {
     <?php if(isset($_SESSION['flash_success']) && empty($lastEnrolled)): ?>
         <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4 rounded-3 d-flex align-items-center gap-2" role="alert">
             <i class="fa fa-check-circle fs-5 text-success"></i>
-            <div><?php echo $_SESSION['flash_success']; unset($_SESSION['flash_success']); ?></div>
+            <div><?php echo htmlspecialchars($_SESSION['flash_success'], ENT_QUOTES, 'UTF-8'); unset($_SESSION['flash_success']); ?></div>
             <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     <?php elseif(isset($_SESSION['flash_success'])): unset($_SESSION['flash_success']); endif; ?>
@@ -533,7 +533,7 @@ if (!function_exists('oa_relative_time')) {
     <?php if(isset($_SESSION['flash_error'])): ?>
         <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4 rounded-3 d-flex align-items-center gap-2" role="alert">
             <i class="fa fa-exclamation-triangle fs-5 text-danger"></i>
-            <div><?php echo $_SESSION['flash_error']; unset($_SESSION['flash_error']); ?></div>
+            <div><?php echo htmlspecialchars($_SESSION['flash_error'], ENT_QUOTES, 'UTF-8'); unset($_SESSION['flash_error']); ?></div>
             <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     <?php endif; ?>

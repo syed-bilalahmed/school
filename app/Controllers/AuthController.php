@@ -52,46 +52,40 @@ class AuthController extends Controller {
 
             // Validate Email
             if(empty($data['email'])){
-                $data['email_err'] = 'Please enter email';
+                $data['email_err'] = 'Please enter your email address';
             }
 
             // Validate Password
             if(empty($data['password'])){
-                $data['password_err'] = 'Please enter password';
+                $data['password_err'] = 'Please enter your password';
             }
 
-            // Check for user/email
-            $userModel = $this->model('User');
-            if($userModel->findUserByEmail($data['email'])){
-                // User found
-            } else {
-                $data['email_err'] = 'No user found';
-            }
-
-            // Make sure errors are empty
+            // Only attempt login if basic validation passes
             if(empty($data['email_err']) && empty($data['password_err'])){
-                // Validated
-                // Check and set logged in user
+                $userModel = $this->model('User');
+                // Ensure all standard role demo accounts exist (accountant, teacher, etc.)
+                $userModel->ensureRoleDemoAccounts();
                 $loggedInUser = $userModel->login($data['email'], $data['password']);
 
                 if($loggedInUser){
                     // Reset attempts on successful login
                     unset($_SESSION['login_attempts']);
                     unset($_SESSION['last_login_attempt']);
-                    
+
                     // Create Session
                     $this->createUserSession($loggedInUser);
                 } else {
                     $_SESSION['login_attempts']++;
                     $_SESSION['last_login_attempt'] = time();
-                    
-                    $data['password_err'] = 'Password incorrect';
+
+                    // Generic message prevents user enumeration (don't reveal if email exists)
+                    $data['email_err'] = 'Invalid email or password. Please try again.';
                     $this->view('auth/login', $data);
                 }
             } else {
                 $_SESSION['login_attempts']++;
                 $_SESSION['last_login_attempt'] = time();
-                
+
                 // Load view with errors
                 $this->view('auth/login', $data);
             }

@@ -59,14 +59,31 @@ class Library {
     }
 
     // Issue/Return
-    public function getIssuedBooks(){
-        $this->db->query("SELECT bi.*, b.book_title, b.book_no, u.name as user_name, u.role 
-                          FROM book_issues bi
-                          JOIN books b ON bi.book_id = b.id
-                          JOIN users u ON bi.user_id = u.id
-                          WHERE bi.is_returned = 0 AND bi.school_id = :school_id
-                          ORDER BY bi.issue_date DESC");
-        $this->db->bind(':school_id', TenantContext::getSchoolId());
+    public function getIssuedBooks($filterType = null){
+        $schoolId = TenantContext::getSchoolId() ?: 1;
+        $sql = "SELECT bi.*, b.book_title, b.book_no, b.author, b.isbn,
+                       u.name as user_name, u.role, u.email,
+                       s.admission_no, c.class_name, sec.section_name,
+                       st.staff_code, st.department, st.designation
+                FROM book_issues bi
+                JOIN books b ON bi.book_id = b.id
+                JOIN users u ON bi.user_id = u.id
+                LEFT JOIN students s ON u.id = s.user_id AND s.school_id = :school_id
+                LEFT JOIN classes c ON s.class_id = c.id
+                LEFT JOIN sections sec ON s.section_id = sec.id
+                LEFT JOIN staff st ON u.id = st.user_id AND st.school_id = :school_id
+                WHERE bi.is_returned = 0 AND (bi.school_id = :school_id OR bi.school_id IS NULL)";
+        
+        if ($filterType === 'student') {
+            $sql .= " AND bi.user_type = 'student'";
+        } elseif ($filterType === 'faculty' || $filterType === 'staff') {
+            $sql .= " AND bi.user_type IN ('faculty', 'staff', 'teacher')";
+        }
+
+        $sql .= " ORDER BY bi.issue_date DESC, bi.id DESC";
+
+        $this->db->query($sql);
+        $this->db->bind(':school_id', $schoolId);
         return $this->db->resultSet();
     }
 
@@ -95,16 +112,17 @@ class Library {
         return false;
     }
 
-    public function returnBook($id, $return_date){
+    public function returnBook($id, $return_date, $fine = 0.00){
         // Get Issue details to increase Qty
         $this->db->query("SELECT book_id FROM book_issues WHERE id = :id AND school_id = :school_id");
         $this->db->bind(':school_id', TenantContext::getSchoolId());
         $this->db->bind(':id', $id);
         $issue = $this->db->single();
 
-        $this->db->query("UPDATE book_issues SET return_date = :rdate, is_returned = 1 WHERE id = :id AND school_id = :school_id");
+        $this->db->query("UPDATE book_issues SET return_date = :rdate, fine = :fine, is_returned = 1 WHERE id = :id AND school_id = :school_id");
         $this->db->bind(':school_id', TenantContext::getSchoolId());
         $this->db->bind(':rdate', $return_date);
+        $this->db->bind(':fine', (float)$fine);
         $this->db->bind(':id', $id);
         
         if($this->db->execute()){
@@ -117,9 +135,39 @@ class Library {
         return false;
     }
     
+    // Get Students for Issue Book
+    public function getStudentsForIssue(){
+        $schoolId = TenantContext::getSchoolId() ?: 1;
+        $this->db->query("SELECT u.id as user_id, u.name, u.email, u.role, 
+                                 s.id as student_id, s.admission_no, s.roll_no,
+                                 c.class_name, sec.section_name
+                          FROM users u
+                          LEFT JOIN students s ON u.id = s.user_id AND s.school_id = :school_id
+                          LEFT JOIN classes c ON s.class_id = c.id
+                          LEFT JOIN sections sec ON s.section_id = sec.id
+                          WHERE u.role = 'student' AND (u.school_id = :school_id OR u.school_id IS NULL)
+                          ORDER BY u.name ASC");
+        $this->db->bind(':school_id', $schoolId);
+        return $this->db->resultSet();
+    }
+
+    // Get Faculty / Staff for Issue Book
+    public function getStaffForIssue(){
+        $schoolId = TenantContext::getSchoolId() ?: 1;
+        $this->db->query("SELECT u.id as user_id, u.name, u.email, u.role,
+                                 st.staff_code, st.department, st.designation
+                          FROM users u
+                          LEFT JOIN staff st ON u.id = st.user_id AND st.school_id = :school_id
+                          WHERE u.role IN ('teacher', 'accountant', 'librarian', 'receptionist', 'admin', 'staff')
+                            AND (u.school_id = :school_id OR u.school_id IS NULL)
+                          ORDER BY u.name ASC");
+        $this->db->bind(':school_id', $schoolId);
+        return $this->db->resultSet();
+    }
+
     // Search Members (Students/Staff) for Issue
     public function searchMembers($term){
-        $this->db->query("SELECT id, name, role, email FROM users WHERE (name LIKE :t1 OR email LIKE :t2) AND school_id = :school_id LIMIT 10");
+        $this->db->query("SELECT id, name, role, email FROM users WHERE (name LIKE :t1 OR email LIKE :t2) AND (school_id = :school_id OR school_id IS NULL) LIMIT 20");
         $param = "%$term%";
         $this->db->bind(':school_id', TenantContext::getSchoolId() ?: 1);
         $this->db->bind(':t1', $param);
@@ -127,3 +175,4 @@ class Library {
         return $this->db->resultSet();
     }
 }
+

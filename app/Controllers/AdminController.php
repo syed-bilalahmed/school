@@ -564,7 +564,18 @@ class AdminController extends Controller {
 
     private function requireSuperAdmin(){
         if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'super_admin') {
-            die('Access denied. Super admin privileges required.');
+            $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+                   || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false);
+            if ($isAjax) {
+                if (ob_get_length()) ob_clean();
+                http_response_code(403);
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode(['success' => false, 'message' => 'Access Denied: Super administrator privileges are required.', 'error' => 'forbidden']);
+                exit;
+            }
+            $_SESSION['flash_error'] = 'Access Denied: Super administrator privileges are required.';
+            header('Location: ' . URLROOT . '/admin/dashboard');
+            exit;
         }
     }
 }

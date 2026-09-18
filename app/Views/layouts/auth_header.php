@@ -14,7 +14,15 @@ $dynamicSchoolLogo = !empty($globalSiteSettings['logo']) ? $globalSiteSettings['
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($dynamicSchoolName, ENT_QUOTES, 'UTF-8'); ?> &bull; Portal Authentication</title>
+    <!-- Dynamic Favicon -->
+    <?php if(!empty($dynamicSchoolLogo)): ?>
+        <link rel="icon" type="image/png" href="<?php echo URLROOT . '/' . htmlspecialchars($dynamicSchoolLogo); ?>">
+        <link rel="shortcut icon" href="<?php echo URLROOT . '/' . htmlspecialchars($dynamicSchoolLogo); ?>">
+        <link rel="apple-touch-icon" href="<?php echo URLROOT . '/' . htmlspecialchars($dynamicSchoolLogo); ?>">
+    <?php else: ?>
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
+    <?php endif; ?>
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -24,7 +32,7 @@ $dynamicSchoolLogo = !empty($globalSiteSettings['logo']) ? $globalSiteSettings['
     <!-- FontAwesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Application CSS -->
-    <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/style.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/style.css?v=2.2.0">
     <meta name="csrf-token" content="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
 </head>
 <body class="auth-standalone-body">

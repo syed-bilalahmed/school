@@ -33,7 +33,15 @@ if (!empty($_SERVER['HTTP_X_PJAX'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($dynamicSchoolName, ENT_QUOTES, 'UTF-8'); ?></title>
+    <!-- Dynamic Favicon -->
+    <?php if(!empty($dynamicSchoolLogo)): ?>
+        <link rel="icon" type="image/png" href="<?php echo URLROOT . '/' . htmlspecialchars($dynamicSchoolLogo); ?>">
+        <link rel="shortcut icon" href="<?php echo URLROOT . '/' . htmlspecialchars($dynamicSchoolLogo); ?>">
+        <link rel="apple-touch-icon" href="<?php echo URLROOT . '/' . htmlspecialchars($dynamicSchoolLogo); ?>">
+    <?php else: ?>
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
+    <?php endif; ?>
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -42,8 +50,8 @@ if (!empty($_SERVER['HTTP_X_PJAX'])) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- FontAwesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Luxury Modern Theme CSS (Browser Cached) -->
-    <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/style.css?v=2.2.0">
+    <!-- Luxury Modern Theme CSS -->
+    <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/style.css?v=3.0.0">
     <meta name="csrf-token" content="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
     <script>
         window.APP_CURRENCY = "<?php echo htmlspecialchars($data['currency'] ?? $dynamicCurrency); ?>";
@@ -51,6 +59,8 @@ if (!empty($_SERVER['HTTP_X_PJAX'])) {
     </script>
 </head>
 <body class="<?php echo isset($_SESSION['user_id']) ? 'has-sidebar' : ''; ?>">
+<!-- PJAX Navigation Progress Bar -->
+<div id="pjax-progress-bar"></div>
 <div class="app-wrapper">
     <?php if(isset($_SESSION['user_id'])): ?>
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
@@ -79,24 +89,28 @@ if (!empty($_SERVER['HTTP_X_PJAX'])) {
                 </button>
                 <a href="<?php echo URLROOT; ?>/" target="_blank" class="school-badge d-none d-sm-inline-flex align-items-center gap-2 text-decoration-none" title="Visit Public School Website (Opens in new tab)">
                     <?php if(!empty($dynamicSchoolLogo)): ?>
-                        <img src="<?php echo URLROOT . '/' . htmlspecialchars($dynamicSchoolLogo); ?>" alt="Logo" style="height: 22px; width: 22px; object-fit: contain; border-radius: 4px;">
+                        <img src="<?php echo URLROOT . '/' . htmlspecialchars($dynamicSchoolLogo); ?>" alt="Logo" style="width: 28px; height: 28px; max-width: 28px; max-height: 28px; object-fit: contain; border-radius: 6px; display: inline-block;">
                     <?php else: ?>
-                        <i class="fa fa-graduation-cap text-primary"></i>
+                        <div class="school-badge-icon" style="width: 28px; height: 28px; font-size: 0.85rem;">
+                            <i class="fa fa-graduation-cap"></i>
+                        </div>
                     <?php endif; ?>
-                    <span class="fw-bold text-dark"><?php echo htmlspecialchars($dynamicSchoolName, ENT_QUOTES, 'UTF-8'); ?></span>
-                    <i class="fa fa-external-link-alt fa-xs text-muted ms-1" style="font-size: 10px;"></i>
+                    <span class="school-badge-text" style="font-size: 0.92rem; font-weight: 700;"><?php echo htmlspecialchars($dynamicSchoolName, ENT_QUOTES, 'UTF-8'); ?></span>
+                    <i class="fa fa-arrow-up-right-from-square fa-xs school-badge-arrow"></i>
                 </a>
-                <a href="<?php echo URLROOT; ?>/sessions/index" class="badge bg-primary-subtle text-primary border border-primary-subtle text-decoration-none d-none d-md-inline-flex align-items-center gap-1 ms-2 py-2 px-3" style="border-radius: 30px; font-weight: 600;" title="Academic Session (Click to manage)">
-                    <i class="fa fa-calendar-alt"></i> Session: <strong><?php echo htmlspecialchars($activeSessionName); ?></strong>
+                <a href="<?php echo URLROOT; ?>/sessions/index" class="session-badge-pill text-decoration-none d-none d-md-inline-flex align-items-center gap-1 ms-2" title="Academic Session (Click to manage)">
+                    <i class="fa fa-calendar-alt text-primary"></i>
+                    <span>Session:</span>
+                    <strong><?php echo htmlspecialchars($activeSessionName); ?></strong>
                 </a>
             </div>
-            <div class="d-flex align-items-center gap-3">
+            <div class="d-flex align-items-center gap-2 gap-md-3">
                 <a href="<?php echo $headerRoleHomeUrl; ?>" class="nav-icon-btn d-none d-md-inline-flex" title="Dashboard">
-                    <i class="fa fa-home"></i>
+                    <i class="fa fa-house"></i>
                 </a>
                 <?php if(in_array($userRole, ['admin', 'super_admin'])): ?>
                 <a href="<?php echo URLROOT; ?>/setting/index" class="nav-icon-btn d-none d-md-inline-flex" title="System Settings">
-                    <i class="fa fa-cog"></i>
+                    <i class="fa fa-gear"></i>
                 </a>
                 <?php endif; ?>
                 <div class="dropdown">
@@ -113,22 +127,24 @@ if (!empty($_SERVER['HTTP_X_PJAX'])) {
                             <span class="user-name"><?php echo htmlspecialchars($userName, ENT_QUOTES, 'UTF-8'); ?></span>
                             <span class="user-role-badge"><?php echo str_replace('_', ' ', $userRole); ?></span>
                         </div>
-                        <i class="fa fa-chevron-down text-muted ms-1" style="font-size: 0.7rem;"></i>
+                        <i class="fa fa-chevron-down text-muted ms-1 user-dropdown-arrow" style="font-size: 0.65rem;"></i>
                     </div>
-                    <ul class="dropdown-menu dropdown-menu-end">
+                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 modern-dropdown-menu">
                         <li>
-                            <div class="px-3 py-2 border-bottom">
-                                <div class="fw-bold"><?php echo htmlspecialchars($userName, ENT_QUOTES, 'UTF-8'); ?></div>
-                                <small class="text-muted text-capitalize"><?php echo str_replace('_', ' ', $userRole); ?></small>
+                            <div class="px-3 py-2 border-bottom bg-light bg-opacity-50 rounded-top">
+                                <div class="fw-bold text-dark"><?php echo htmlspecialchars($userName, ENT_QUOTES, 'UTF-8'); ?></div>
+                                <small class="text-muted text-capitalize d-flex align-items-center gap-1">
+                                    <span class="status-dot-sm"></span> <?php echo str_replace('_', ' ', $userRole); ?>
+                                </small>
                             </div>
                         </li>
-                        <li><a class="dropdown-item mt-1" href="<?php echo $headerRoleHomeUrl; ?>"><i class="fa fa-tachometer-alt me-2 text-primary"></i> My Hub</a></li>
-                        <li><a class="dropdown-item" href="<?php echo URLROOT; ?>/profile/index"><i class="fa fa-user-circle me-2 text-info"></i> Profile &amp; Bio Settings</a></li>
+                        <li><a class="dropdown-item mt-1 py-2" href="<?php echo $headerRoleHomeUrl; ?>"><i class="fa fa-gauge me-2 text-primary"></i> My Hub</a></li>
+                        <li><a class="dropdown-item py-2" href="<?php echo URLROOT; ?>/profile/index"><i class="fa fa-circle-user me-2 text-info"></i> Profile &amp; Bio</a></li>
                         <?php if(in_array($userRole, ['admin', 'super_admin'])): ?>
-                        <li><a class="dropdown-item" href="<?php echo URLROOT; ?>/setting/index"><i class="fa fa-sliders me-2 text-warning"></i> Settings</a></li>
+                        <li><a class="dropdown-item py-2" href="<?php echo URLROOT; ?>/setting/index"><i class="fa fa-sliders me-2 text-warning"></i> Settings</a></li>
                         <?php endif; ?>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-danger" href="<?php echo URLROOT; ?>/auth/logout"><i class="fa fa-sign-out-alt me-2"></i> Sign Out</a></li>
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <li><a class="dropdown-item text-danger py-2" href="<?php echo URLROOT; ?>/auth/logout"><i class="fa fa-right-from-bracket me-2"></i> Sign Out</a></li>
                     </ul>
                 </div>
             </div>
@@ -136,3 +152,27 @@ if (!empty($_SERVER['HTTP_X_PJAX'])) {
         <?php endif; ?>
         
         <div class="main-content-container">
+<?php
+// ============================================================
+// GLOBAL FLASH MESSAGE RENDERER
+// Renders flash_success / flash_error / flash_warning / flash_info
+// set by any controller. Unsets them immediately after display.
+// ============================================================
+$flashTypes = [
+    'flash_success' => ['type' => 'success', 'icon' => 'circle-check'],
+    'flash_error'   => ['type' => 'danger',  'icon' => 'circle-exclamation'],
+    'flash_warning' => ['type' => 'warning', 'icon' => 'triangle-exclamation'],
+    'flash_info'    => ['type' => 'info',    'icon' => 'circle-info'],
+];
+foreach ($flashTypes as $key => $meta) {
+    if (!empty($_SESSION[$key])) {
+        $msg = $_SESSION[$key];
+        unset($_SESSION[$key]);
+        echo '<div class="alert alert-' . $meta['type'] . ' alert-dismissible d-flex align-items-start gap-2 py-2 px-3 mb-3 shadow-sm animate-fade-in-up" role="alert" style="border-radius:10px;font-size:0.88rem;">';
+        echo '<i class="fa fa-' . $meta['icon'] . ' mt-1 flex-shrink-0"></i>';
+        echo '<div class="flex-grow-1">' . $msg . '</div>';
+        echo '<button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close" style="font-size:0.75rem;"></button>';
+        echo '</div>';
+    }
+}
+?>

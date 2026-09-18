@@ -5,8 +5,11 @@ class ExamController extends Controller {
     public function __construct(){
         if (class_exists('AuthGuard')) {
             AuthGuard::requireSchoolContext();
-            $url = trim($_GET['url'] ?? '', '/');
-            $isReportCardAction = (strpos($url, 'exam/reportCard') !== false || strpos($url, 'exam/report_card') !== false);
+            $urlSegments = explode('/', trim($_GET['url'] ?? '', '/'));
+            // Only bypass permission for exactly the reportCard or batchReportCards actions
+            $reportCardActions = ['reportCard', 'report_card', 'batchReportCards', 'batch_report_cards'];
+            $currentAction = $urlSegments[1] ?? '';
+            $isReportCardAction = in_array($currentAction, $reportCardActions, true);
             if (!$isReportCardAction) {
                 AuthGuard::requirePermission('manage_exams');
             }

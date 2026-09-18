@@ -42,7 +42,7 @@ $isFilterApplied = !empty($data['class_id']) || !empty($data['keyword']) || (!em
 <?php if(isset($_SESSION['flash_success'])): ?>
     <div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 py-2 px-3 mb-3 small shadow-xs" role="alert">
         <i class="fa fa-check-circle fs-6"></i>
-        <div class="fw-semibold text-dark"><?php echo $_SESSION['flash_success']; ?></div>
+        <div class="fw-semibold text-dark"><?php echo htmlspecialchars($_SESSION['flash_success'], ENT_QUOTES, 'UTF-8'); ?></div>
         <button type="button" class="btn-close py-2 ms-auto" data-bs-dismiss="alert"></button>
     </div>
     <?php unset($_SESSION['flash_success']); ?>

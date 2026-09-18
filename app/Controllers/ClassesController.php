@@ -4,12 +4,8 @@ class ClassesController extends Controller {
         AuthGuard::requireAuth();
         AuthGuard::requireSchoolContext();
         AuthGuard::requirePermission('manage_academics');
-        if(!isset($_SESSION['user_id']) || ($_SESSION['user_role'] != 'super_admin' && $_SESSION['user_role'] != 'admin')){
-             header('Location: ' . URLROOT . '/auth/login');
-             exit;
-        }
-        if (empty($_SESSION['csrf_token'])) {
-            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && class_exists('AuthGuard')) {
+            AuthGuard::verifyCSRF();
         }
     }
 

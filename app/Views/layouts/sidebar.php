@@ -23,11 +23,11 @@ elseif ($userRole === 'librarian') $roleHomeUrl = URLROOT . '/library/index';
 <aside class="sidebar">
     <div class="sidebar-header">
         <a href="<?php echo $roleHomeUrl; ?>" class="sidebar-brand" title="<?php echo htmlspecialchars($dynamicSchoolName, ENT_QUOTES, 'UTF-8'); ?>">
-            <div class="brand-icon-box">
+            <div class="brand-icon-box" style="width: 44px; height: 44px;">
                 <?php if(!empty($dynamicSchoolLogo)): ?>
-                    <img src="<?php echo URLROOT . '/' . htmlspecialchars($dynamicSchoolLogo); ?>" alt="Logo" class="brand-logo-img">
+                    <img src="<?php echo URLROOT . '/' . htmlspecialchars($dynamicSchoolLogo); ?>" alt="Logo" class="brand-logo-img" style="width: 100%; height: 100%; max-width: 40px; max-height: 40px; object-fit: contain; display: block; margin: auto;">
                 <?php else: ?>
-                    <i class="fa fa-graduation-cap"></i>
+                    <i class="fa fa-graduation-cap fs-5"></i>
                 <?php endif; ?>
             </div>
             <div class="brand-text">

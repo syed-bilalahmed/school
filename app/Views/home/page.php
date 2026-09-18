@@ -18,6 +18,17 @@ elseif ($theme === 'dark') $themeColor = '#0f172a';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8'); ?> &mdash; <?php echo htmlspecialchars($schoolName, ENT_QUOTES, 'UTF-8'); ?></title>
     
+    <!-- Dynamic Favicon -->
+    <?php 
+    $pageLogo = !empty($siteSettings['logo']) ? $siteSettings['logo'] : (!empty($data['settings']->logo) ? $data['settings']->logo : '');
+    if(!empty($pageLogo)): ?>
+        <link rel="icon" type="image/png" href="<?php echo URLROOT . '/' . htmlspecialchars($pageLogo); ?>">
+        <link rel="shortcut icon" href="<?php echo URLROOT . '/' . htmlspecialchars($pageLogo); ?>">
+        <link rel="apple-touch-icon" href="<?php echo URLROOT . '/' . htmlspecialchars($pageLogo); ?>">
+    <?php else: ?>
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
+    <?php endif; ?>
+
     <?php if(!empty($data['page']->meta_description)): ?>
         <meta name="description" content="<?php echo htmlspecialchars($data['page']->meta_description, ENT_QUOTES, 'UTF-8'); ?>">
     <?php endif; ?>

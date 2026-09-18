@@ -10,8 +10,8 @@
                             <div class="alert alert-info">Please select class and section from filters first.</div>
                         <?php else: ?>
                             <input type="hidden" name="add_homework" value="1">
-                            <input type="hidden" name="class_id" value="<?php echo $_GET['class_id']; ?>">
-                            <input type="hidden" name="section_id" value="<?php echo $_GET['section_id']; ?>">
+                            <input type="hidden" name="class_id" value="<?php echo htmlspecialchars($_GET['class_id'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                            <input type="hidden" name="section_id" value="<?php echo htmlspecialchars($_GET['section_id'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                             
                             <div class="mb-3">
                                 <label class="form-label">Subject</label>

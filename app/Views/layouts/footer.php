@@ -64,7 +64,9 @@ if (!empty($_SERVER['HTTP_X_PJAX'])) {
     window.fetch = function(resource, options) {
         options = options || {};
         var method = (options.method || 'GET').toUpperCase();
+        // Always read the latest token - keeps closure var in sync with window.CSRF_TOKEN
         var activeToken = window.CSRF_TOKEN || csrfToken;
+        csrfToken = activeToken; // keep closure variable up-to-date
         if (method === 'POST' && activeToken) {
             // Also append csrf_token to FormData if missing or empty
             if (options.body instanceof FormData) {
@@ -87,6 +89,14 @@ if (!empty($_SERVER['HTTP_X_PJAX'])) {
         }
         return originalFetch.call(this, resource, options);
     };
+
+    // --- 3. Keep csrfToken closure var in sync whenever window.CSRF_TOKEN changes ---
+    // This handles PJAX navigation responses that update window.CSRF_TOKEN via response headers
+    document.addEventListener('page:loaded', function() {
+        if (window.CSRF_TOKEN) {
+            csrfToken = window.CSRF_TOKEN;
+        }
+    });
 })();
 </script>
 
@@ -129,7 +139,7 @@ window.showToast = function(message, type = 'success') {
     }, 4000);
 };
 
-// Global Page Initializer (Tooltips, Sidebar, Mobile Toggle)
+// Global Page Initializer (Tooltips, Sidebar, Mobile Toggle, Flash-to-Toast)
 window.initPageComponents = function() {
     // Re-initialize Bootstrap tooltips
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
@@ -164,21 +174,52 @@ window.initPageComponents = function() {
             } catch(e) {}
         }, 5000);
     });
+
+    // Flash-to-Toast Converter:
+    // After PJAX navigation, convert server-rendered flash alerts into floating toasts
+    // so they appear non-intrusively without displacing page content.
+    if (typeof window.showToast === 'function') {
+        const flashMap = {
+            'alert-success': 'success',
+            'alert-danger':  'danger',
+            'alert-warning': 'warning',
+            'alert-info':    'info'
+        };
+        Object.entries(flashMap).forEach(([cls, toastType]) => {
+            // Only convert alerts that were rendered by the global flash block (have animate-fade-in-up)
+            document.querySelectorAll('.alert.' + cls + '.animate-fade-in-up').forEach(alertEl => {
+                const msgEl = alertEl.querySelector('.flex-grow-1') || alertEl;
+                const msg = msgEl.innerHTML.trim();
+                if (msg) {
+                    window.showToast(msg, toastType);
+                    // Hide the inline alert silently
+                    alertEl.style.display = 'none';
+                }
+            });
+        });
+    }
 };
+
 
 // ============================================================================
 // SPA DOMContentLoaded Polyfill & Lifecycle Bridge
-// Automatically triggers DOMContentLoaded handlers registered by SPA views
+// Fires synthetic DOMContentLoaded for inline view scripts added by PJAX.
+// Only active during the PJAX script-execution window (window._spaScriptExec).
+// This prevents third-party libraries loaded before PJAX from double-firing.
 // ============================================================================
 (function() {
     const originalDocAdd = document.addEventListener;
     document.addEventListener = function(type, listener, options) {
-        if (type === 'DOMContentLoaded' && (document.readyState === 'interactive' || document.readyState === 'complete')) {
+        // Only intercept DOMContentLoaded when DOM is already ready AND
+        // we are inside a PJAX script-execution window (guarded flag)
+        if (type === 'DOMContentLoaded' &&
+            (document.readyState === 'interactive' || document.readyState === 'complete') &&
+            window._spaScriptExec === true) {
             setTimeout(function() {
                 try {
                     listener.call(document, new Event('DOMContentLoaded'));
                 } catch(e) {
-                    console.error('SPA DOMContentLoaded error:', e);
+                    console.warn('SPA DOMContentLoaded error:', e);
                 }
             }, 1);
             return;
@@ -188,12 +229,14 @@ window.initPageComponents = function() {
 
     const originalWinAdd = window.addEventListener;
     window.addEventListener = function(type, listener, options) {
-        if (type === 'DOMContentLoaded' && (document.readyState === 'interactive' || document.readyState === 'complete')) {
+        if (type === 'DOMContentLoaded' &&
+            (document.readyState === 'interactive' || document.readyState === 'complete') &&
+            window._spaScriptExec === true) {
             setTimeout(function() {
                 try {
                     listener.call(window, new Event('DOMContentLoaded'));
                 } catch(e) {
-                    console.error('SPA window DOMContentLoaded error:', e);
+                    console.warn('SPA window DOMContentLoaded error:', e);
                 }
             }, 1);
             return;
@@ -289,6 +332,8 @@ if (!window._modalStackingFixRegistered) {
 
     function executeScripts(container) {
         const scripts = container.querySelectorAll('script');
+        // Set flag so DOMContentLoaded polyfill only fires during PJAX script execution
+        window._spaScriptExec = true;
         scripts.forEach(oldScript => {
             const newScript = document.createElement('script');
             Array.from(oldScript.attributes).forEach(attr => {
@@ -302,6 +347,8 @@ if (!window._modalStackingFixRegistered) {
             }
             oldScript.parentNode.replaceChild(newScript, oldScript);
         });
+        // Clear flag after scripts finish executing (use timeout to catch async DOMContentLoaded)
+        setTimeout(function() { window._spaScriptExec = false; }, 100);
     }
 
     function updateActiveSidebarLink(targetPath) {
@@ -386,6 +433,10 @@ if (!window._modalStackingFixRegistered) {
             container.style.opacity = '0.65';
             container.style.transition = 'opacity 0.1s ease-out';
         }
+
+        // Start PJAX progress bar
+        document.body.classList.add('pjax-loading');
+        document.body.classList.remove('pjax-done');
 
         // Clean up any open modals from current page before navigating
         window.cleanupModalsAndBackdrops();
@@ -488,14 +539,22 @@ if (!window._modalStackingFixRegistered) {
             // Dispatch global event for views that listen for page loaded
             document.dispatchEvent(new CustomEvent('page:loaded', { detail: { url: url } }));
 
+            // Complete progress bar
+            document.body.classList.remove('pjax-loading');
+            document.body.classList.add('pjax-done');
+            setTimeout(function() { document.body.classList.remove('pjax-done'); }, 600);
+
         } catch (error) {
             console.error('SPA Navigation error, falling back:', error);
             window.location.href = url;
         } finally {
             if (container) container.style.opacity = '1';
             isNavigating = false;
+            // Ensure progress bar always resets even on error
+            document.body.classList.remove('pjax-loading');
         }
     };
+
 
     // Pre-fetch pages on mouse hover / pointer proximity (Instant 0ms click feel)
     document.addEventListener('mouseover', function(e) {
@@ -544,7 +603,9 @@ if (!window._modalStackingFixRegistered) {
         if (
             form.target === '_blank' ||
             form.hasAttribute('data-no-pjax') ||
+            form.hasAttribute('data-ajax-form') ||
             form.classList.contains('no-pjax') ||
+            form.classList.contains('ajax-form') ||
             form.classList.contains('ajax-settings-form') ||
             form.classList.contains('ajax-profile-form')
         ) {
@@ -694,6 +755,20 @@ if (!window._modalStackingFixRegistered) {
                 window.initPageComponents();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
                 document.dispatchEvent(new CustomEvent('page:loaded', { detail: { url: finalUrl } }));
+
+                // Surface success feedback from query string or flash alerts
+                try {
+                    const parsedFinal = new URL(finalUrl, window.location.origin);
+                    if (parsedFinal.searchParams.has('success') && typeof window.showToast === 'function') {
+                        window.showToast('Changes saved successfully.', 'success');
+                    } else {
+                        const flashSuccess = container.querySelector('.alert-success');
+                        if (flashSuccess && typeof window.showToast === 'function') {
+                            const msg = flashSuccess.textContent.trim();
+                            if (msg) window.showToast(msg, 'success');
+                        }
+                    }
+                } catch (toastErr) {}
             }
 
         } catch (err) {

@@ -2,6 +2,8 @@
   Options -Multiviews
   RewriteEngine On
   RewriteBase /school/public/
+  # Pass Authorization header to PHP for API Bearer tokens
+  SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
   RewriteRule ^index\.php$ - [L]
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteCond %{REQUEST_FILENAME} !-f

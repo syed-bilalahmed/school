@@ -570,8 +570,8 @@ class User {
                     $this->db->bind(':password', $hashed);
                     $this->db->bind(':role', $rKey);
                     $this->db->execute();
+                    $targetUserId = $this->db->lastInsertId();
                 } else {
-                    // Make sure existing demo user has the known default password and valid school_id
                     $hashed = password_hash($info['password'], PASSWORD_DEFAULT);
                     $this->db->query("UPDATE users SET password = :password, role = :role, school_id = COALESCE(school_id, :school_id) WHERE id = :id");
                     $this->db->bind(':password', $hashed);
@@ -579,6 +579,20 @@ class User {
                     $this->db->bind(':school_id', $schoolId);
                     $this->db->bind(':id', $existing->id);
                     $this->db->execute();
+                    $targetUserId = $existing->id;
+                }
+
+                if ($targetUserId) {
+                    // Sync user_roles table
+                    $this->db->query("SELECT id FROM roles WHERE name = :rname LIMIT 1");
+                    $this->db->bind(':rname', $rKey);
+                    $rObj = $this->db->single();
+                    if ($rObj) {
+                        $this->db->query("INSERT IGNORE INTO user_roles (user_id, role_id) VALUES (:user_id, :role_id)");
+                        $this->db->bind(':user_id', $targetUserId);
+                        $this->db->bind(':role_id', $rObj->id);
+                        $this->db->execute();
+                    }
                 }
             } catch (Throwable $e) {
                 error_log('[ensureRoleDemoAccounts] ' . $e->getMessage());

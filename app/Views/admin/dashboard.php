@@ -9,80 +9,317 @@
     $staffPercent = $totalCommunity > 0 ? (100 - $studentPercent) : 0;
 ?>
 
-    <!-- Executive Hero Welcome Banner -->
-    <div class="dashboard-hero-card animate-fade-in-up">
-        <div class="hero-content d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
-            <div>
-                <div class="d-flex align-items-center gap-3 mb-3">
-                    <?php if(!empty($dynamicSchoolLogo)): ?>
-                        <img src="<?php echo URLROOT . '/' . htmlspecialchars($dynamicSchoolLogo); ?>" alt="School Logo" style="height: 52px; width: 52px; object-fit: contain; background: #ffffff; padding: 4px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
-                    <?php else: ?>
-                        <div class="d-flex align-items-center justify-content-center bg-white text-primary rounded-3 shadow-xs" style="height: 52px; width: 52px;">
-                            <i class="fa fa-school fa-2x"></i>
-                        </div>
-                    <?php endif; ?>
+<style>
+/* Critical Dashboard Hero Styles (Zero-Cache-Lag) */
+.db-hero-banner {
+    position: relative !important;
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 35%, #1e3a5f 70%, #0f2744 100%) !important;
+    border-radius: 20px !important;
+    overflow: hidden !important;
+    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.35), 0 4px 16px rgba(99, 102, 241, 0.15) !important;
+    margin-bottom: 1.5rem !important;
+    color: #ffffff !important;
+}
+.db-hero-orb {
+    position: absolute !important;
+    border-radius: 50% !important;
+    pointer-events: none !important;
+    opacity: 0.18 !important;
+    filter: blur(60px) !important;
+}
+.db-hero-orb-1 { width: 320px !important; height: 320px !important; background: radial-gradient(circle, #6366f1 0%, transparent 70%) !important; top: -80px !important; right: 5% !important; }
+.db-hero-orb-2 { width: 220px !important; height: 220px !important; background: radial-gradient(circle, #06b6d4 0%, transparent 70%) !important; bottom: -60px !important; left: 10% !important; }
+.db-hero-orb-3 { width: 160px !important; height: 160px !important; background: radial-gradient(circle, #818cf8 0%, transparent 70%) !important; top: 30% !important; left: 38% !important; }
+.db-hero-inner {
+    position: relative !important;
+    z-index: 2 !important;
+    display: flex !important;
+    align-items: stretch !important;
+    gap: 0 !important;
+}
+.db-hero-left {
+    flex: 1 1 0 !important;
+    padding: 30px 34px !important;
+    border-right: 1px solid rgba(255,255,255,0.08) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 13px !important;
+    justify-content: center !important;
+}
+.db-hero-school-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 14px !important;
+}
+.db-hero-school-name {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 1.15rem !important;
+    font-weight: 800 !important;
+    color: #ffffff !important;
+    line-height: 1.2 !important;
+    letter-spacing: -0.02em !important;
+}
+.db-hero-campus-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    margin-top: 3px !important;
+    flex-wrap: wrap !important;
+}
+.db-hero-campus-badge {
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    color: rgba(255,255,255,0.65) !important;
+}
+.db-hero-web-link {
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    color: #818cf8 !important;
+    text-decoration: none !important;
+}
+.db-hero-greeting {
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-size: 1.55rem !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    line-height: 1.25 !important;
+    letter-spacing: -0.025em !important;
+}
+.db-hero-greeting strong { color: #a5b4fc !important; font-weight: 800 !important; }
+.db-hero-subtext {
+    font-size: 0.85rem !important;
+    color: rgba(255,255,255,0.55) !important;
+    line-height: 1.5 !important;
+    max-width: 440px !important;
+}
+.db-hero-meta-row {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+}
+.db-hero-meta-pill {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    background: rgba(255,255,255,0.08) !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    border-radius: 100px !important;
+    padding: 4px 12px !important;
+    font-size: 0.73rem !important;
+    font-weight: 600 !important;
+    color: rgba(255,255,255,0.75) !important;
+}
+.db-hero-meta-live {
+    border-color: rgba(16, 185, 129, 0.4) !important;
+    background: rgba(16, 185, 129, 0.12) !important;
+    color: #6ee7b7 !important;
+}
+.db-hero-live-dot {
+    display: inline-block !important;
+    width: 7px !important;
+    height: 7px !important;
+    border-radius: 50% !important;
+    background: #10b981 !important;
+}
+.db-hero-meta-role {
+    border-color: rgba(129, 140, 248, 0.35) !important;
+    background: rgba(129, 140, 248, 0.12) !important;
+    color: #c7d2fe !important;
+}
+.db-hero-right {
+    flex: 0 0 auto !important;
+    width: 380px !important;
+    padding: 26px 26px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+}
+.db-hero-actions-label {
+    font-size: 0.7rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.1em !important;
+    color: rgba(255,255,255,0.4) !important;
+}
+.db-hero-actions-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 10px !important;
+}
+.db-hero-action-card {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 7px !important;
+    padding: 13px 4px 11px !important;
+    background: rgba(255,255,255,0.07) !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    border-radius: 14px !important;
+    text-decoration: none !important;
+    transition: all 0.2s ease !important;
+}
+.db-hero-action-card:hover {
+    transform: translateY(-3px) scale(1.04) !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25) !important;
+    border-color: rgba(255,255,255,0.25) !important;
+    background: rgba(255,255,255,0.12) !important;
+}
+.db-hero-action-icon {
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 11px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1rem !important;
+}
+.db-hero-action-card[data-color="blue"]   .db-hero-action-icon { background: rgba(37,99,235,0.25) !important;  color: #93c5fd !important; }
+.db-hero-action-card[data-color="green"]  .db-hero-action-icon { background: rgba(16,185,129,0.25) !important; color: #6ee7b7 !important; }
+.db-hero-action-card[data-color="red"]    .db-hero-action-icon { background: rgba(239,68,68,0.25) !important;  color: #fca5a5 !important; }
+.db-hero-action-card[data-color="purple"] .db-hero-action-icon { background: rgba(124,58,237,0.25) !important; color: #c4b5fd !important; }
+.db-hero-action-card[data-color="teal"]   .db-hero-action-icon { background: rgba(6,182,212,0.25) !important;  color: #67e8f9 !important; }
+.db-hero-action-card[data-color="amber"]  .db-hero-action-icon { background: rgba(245,158,11,0.25) !important; color: #fcd34d !important; }
+.db-hero-action-card[data-color="indigo"] .db-hero-action-icon { background: rgba(99,102,241,0.25) !important; color: #a5b4fc !important; }
+.db-hero-action-card[data-color="slate"]  .db-hero-action-icon { background: rgba(100,116,139,0.2) !important; color: #cbd5e1 !important; }
+
+.db-hero-action-label {
+    font-size: 0.63rem !important;
+    font-weight: 700 !important;
+    color: rgba(255,255,255,0.75) !important;
+    text-align: center !important;
+    line-height: 1.35 !important;
+}
+.db-hero-action-card:hover .db-hero-action-label { color: #ffffff !important; }
+
+@media (max-width: 1100px) {
+    .db-hero-right { width: 320px !important; }
+}
+@media (max-width: 900px) {
+    .db-hero-inner { flex-direction: column !important; }
+    .db-hero-left { border-right: none !important; border-bottom: 1px solid rgba(255,255,255,0.08) !important; padding: 24px !important; }
+    .db-hero-right { width: 100% !important; padding: 20px 24px 24px !important; }
+}
+@media (max-width: 576px) {
+    .db-hero-left { padding: 18px !important; }
+    .db-hero-greeting { font-size: 1.25rem !important; }
+    .db-hero-actions-grid { gap: 6px !important; }
+    .db-hero-action-icon { width: 32px !important; height: 32px !important; font-size: 0.85rem !important; }
+}
+</style>
+
+    <!-- ============================================================
+         REDESIGNED EXECUTIVE HERO BANNER
+         ============================================================ -->
+    <div class="db-hero-banner animate-fade-in-up mb-4">
+
+        <!-- Decorative background orbs -->
+        <div class="db-hero-orb db-hero-orb-1"></div>
+        <div class="db-hero-orb db-hero-orb-2"></div>
+        <div class="db-hero-orb db-hero-orb-3"></div>
+
+        <div class="db-hero-inner">
+            <!-- LEFT: School identity + greeting -->
+            <div class="db-hero-left">
+                <!-- School identity row -->
+                <div class="db-hero-school-row">
+                    <div class="db-hero-logo-wrap" style="width: 48px; height: 48px; min-width: 48px; max-width: 48px; min-height: 48px; max-height: 48px; overflow: hidden; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: #ffffff; padding: 4px; box-shadow: 0 4px 14px rgba(0,0,0,0.15);">
+                        <?php if(!empty($dynamicSchoolLogo)): ?>
+                            <img src="<?php echo URLROOT . '/' . htmlspecialchars($dynamicSchoolLogo); ?>" alt="Logo" class="db-hero-logo-img" style="width: 100%; height: 100%; max-width: 40px; max-height: 40px; object-fit: contain; display: block; margin: auto;">
+                        <?php else: ?>
+                            <i class="fa fa-graduation-cap text-primary" style="font-size: 1.3rem;"></i>
+                        <?php endif; ?>
+                    </div>
                     <div>
-                        <h4 class="fw-bold mb-0 text-dark"><?php echo htmlspecialchars($dynamicSchoolName, ENT_QUOTES, 'UTF-8'); ?></h4>
-                        <div class="text-muted small">
-                            <span><?php echo htmlspecialchars($dynamicCampusName, ENT_QUOTES, 'UTF-8'); ?></span>
-                            &bull; <a href="<?php echo URLROOT; ?>/" target="_blank" class="text-primary text-decoration-none fw-semibold"><i class="fa fa-globe me-1"></i>Visit Public Website</a>
+                        <div class="db-hero-school-name"><?php echo htmlspecialchars($dynamicSchoolName, ENT_QUOTES, 'UTF-8'); ?></div>
+                        <div class="db-hero-campus-row">
+                            <span class="db-hero-campus-badge"><i class="fa fa-map-marker-alt me-1"></i><?php echo htmlspecialchars($dynamicCampusName, ENT_QUOTES, 'UTF-8'); ?></span>
+                            <a href="<?php echo URLROOT; ?>/" target="_blank" class="db-hero-web-link"><i class="fa fa-globe me-1"></i>Public Site</a>
                         </div>
                     </div>
                 </div>
-                <div class="hero-time-badge mb-2">
-                    <i class="fa fa-calendar-alt text-primary"></i>
-                    <span><?php echo date('l, F j, Y'); ?></span>
-                    <span class="opacity-50">|</span>
-                    <i class="fa fa-clock text-info"></i>
-                    <span>Academic Term Active</span>
-                </div>
-                <h2 class="hero-greeting h3 mb-1">Welcome back, <?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Administrator', ENT_QUOTES, 'UTF-8'); ?>! 👋</h2>
-                <p class="hero-subtext mb-0">
-                    Here is your school management snapshot, real-time institutional metrics, and quick operational shortcuts.
-                </p>
-            </div>
-            <div class="d-flex align-items-center gap-2">
-                <a href="<?php echo URLROOT; ?>/students/admission" class="btn btn-primary">
-                    <i class="fa fa-user-plus"></i> New Admission
-                </a>
-                <a href="<?php echo URLROOT; ?>/attendance/student" class="btn btn-light d-none d-sm-inline-flex">
-                    <i class="fa fa-check-circle text-success"></i> Attendance
-                </a>
-            </div>
-        </div>
-    </div>
 
-    <!-- Quick System Operations Launcher Bar -->
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-body p-3 bg-white rounded-3">
-            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
-                <a href="<?php echo URLROOT; ?>/frontoffice/index" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-semibold">
-                    <i class="fa fa-headset me-1 text-primary"></i> Front Office
-                </a>
-                <a href="<?php echo URLROOT; ?>/frontoffice/onlineAdmissions" class="btn btn-outline-warning btn-sm rounded-pill px-3 fw-semibold text-dark">
-                    <i class="fa fa-inbox me-1 text-warning"></i> Online Admission Inbox
-                </a>
-                <a href="<?php echo URLROOT; ?>/students/admission" class="btn btn-outline-success btn-sm rounded-pill px-3 fw-semibold">
-                    <i class="fa fa-user-plus me-1 text-success"></i> Direct Student Register
-                </a>
-                <a href="<?php echo URLROOT; ?>/attendance/student" class="btn btn-outline-info btn-sm rounded-pill px-3 fw-semibold">
-                    <i class="fa fa-calendar-check me-1 text-info"></i> Daily Attendance
-                </a>
-                <a href="<?php echo URLROOT; ?>/fees/collect" class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-semibold">
-                    <i class="fa fa-receipt me-1 text-danger"></i> Collect Fees
-                </a>
-                <a href="<?php echo URLROOT; ?>/exam/marks" class="btn btn-outline-purple btn-sm rounded-pill px-3 fw-semibold" style="color: #7c3aed; border-color: #7c3aed;">
-                    <i class="fa fa-marker me-1" style="color: #7c3aed;"></i> Marks Entry
-                </a>
-                <a href="<?php echo URLROOT; ?>/payroll/index" class="btn btn-outline-dark btn-sm rounded-pill px-3 fw-semibold">
-                    <i class="fa fa-money-check-dollar me-1 text-success"></i> Staff Payroll
-                </a>
-                <a href="<?php echo URLROOT; ?>/certificate/hub" class="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-semibold">
-                    <i class="fa fa-stamp me-1"></i> Certificates &amp; SLC
-                </a>
-                <a href="<?php echo URLROOT; ?>/setting/index" class="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-semibold">
-                    <i class="fa fa-sliders me-1"></i> System Settings
-                </a>
+                <!-- Greeting -->
+                <div class="db-hero-greeting">
+                    Good <?php
+                        $h = (int)date('G');
+                        if ($h < 12) echo 'Morning';
+                        elseif ($h < 17) echo 'Afternoon';
+                        else echo 'Evening';
+                    ?>, <strong><?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Administrator', ENT_QUOTES, 'UTF-8'); ?></strong>! 👋
+                </div>
+                <div class="db-hero-subtext">Here is your real-time school management snapshot and quick operational shortcuts.</div>
+
+                <!-- Metadata pills row -->
+                <div class="db-hero-meta-row">
+                    <span class="db-hero-meta-pill">
+                        <i class="fa fa-calendar-day"></i>
+                        <?php echo date('D, d M Y'); ?>
+                    </span>
+                    <span class="db-hero-meta-pill">
+                        <i class="fa fa-bolt"></i>
+                        <?php echo htmlspecialchars($_SESSION['active_session_name'] ?? 'Academic Session', ENT_QUOTES, 'UTF-8'); ?>
+                    </span>
+                    <span class="db-hero-meta-pill db-hero-meta-live">
+                        <span class="db-hero-live-dot"></span>
+                        Term Active
+                    </span>
+                    <?php
+                        $roleLabelMap = [
+                            'super_admin' => ['icon' => 'fa-crown',       'label' => 'Super Admin'],
+                            'admin'       => ['icon' => 'fa-shield-halved','label' => 'Administrator'],
+                            'teacher'     => ['icon' => 'fa-chalkboard-user','label' => 'Teacher'],
+                            'accountant'  => ['icon' => 'fa-calculator',  'label' => 'Accountant'],
+                            'receptionist'=> ['icon' => 'fa-headset',     'label' => 'Receptionist'],
+                        ];
+                        $roleKey  = $_SESSION['user_role'] ?? 'admin';
+                        $roleInfo = $roleLabelMap[$roleKey] ?? ['icon' => 'fa-user', 'label' => ucfirst(str_replace('_', ' ', $roleKey))];
+                    ?>
+                    <span class="db-hero-meta-pill db-hero-meta-role">
+                        <i class="fa <?php echo $roleInfo['icon']; ?>"></i>
+                        <?php echo $roleInfo['label']; ?>
+                    </span>
+                </div>
+            </div>
+
+            <!-- RIGHT: Quick action cards -->
+            <div class="db-hero-right">
+                <div class="db-hero-actions-label">Quick Actions</div>
+                <div class="db-hero-actions-grid">
+                    <a href="<?php echo URLROOT; ?>/students/admission" class="db-hero-action-card" data-color="blue">
+                        <div class="db-hero-action-icon"><i class="fa fa-user-plus"></i></div>
+                        <div class="db-hero-action-label">New<br>Admission</div>
+                    </a>
+                    <a href="<?php echo URLROOT; ?>/attendance/student" class="db-hero-action-card" data-color="green">
+                        <div class="db-hero-action-icon"><i class="fa fa-calendar-check"></i></div>
+                        <div class="db-hero-action-label">Daily<br>Attendance</div>
+                    </a>
+                    <a href="<?php echo URLROOT; ?>/fees/collect" class="db-hero-action-card" data-color="red">
+                        <div class="db-hero-action-icon"><i class="fa fa-receipt"></i></div>
+                        <div class="db-hero-action-label">Collect<br>Fees</div>
+                    </a>
+                    <a href="<?php echo URLROOT; ?>/exam/marks" class="db-hero-action-card" data-color="purple">
+                        <div class="db-hero-action-icon"><i class="fa fa-marker"></i></div>
+                        <div class="db-hero-action-label">Marks<br>Entry</div>
+                    </a>
+                    <a href="<?php echo URLROOT; ?>/frontoffice/index" class="db-hero-action-card" data-color="teal">
+                        <div class="db-hero-action-icon"><i class="fa fa-headset"></i></div>
+                        <div class="db-hero-action-label">Front<br>Office</div>
+                    </a>
+                    <a href="<?php echo URLROOT; ?>/payroll/index" class="db-hero-action-card" data-color="amber">
+                        <div class="db-hero-action-icon"><i class="fa fa-money-check-dollar"></i></div>
+                        <div class="db-hero-action-label">Staff<br>Payroll</div>
+                    </a>
+                    <a href="<?php echo URLROOT; ?>/certificate/hub" class="db-hero-action-card" data-color="indigo">
+                        <div class="db-hero-action-icon"><i class="fa fa-stamp"></i></div>
+                        <div class="db-hero-action-label">Certificates<br>&amp; SLC</div>
+                    </a>
+                    <a href="<?php echo URLROOT; ?>/setting/index" class="db-hero-action-card" data-color="slate">
+                        <div class="db-hero-action-icon"><i class="fa fa-sliders"></i></div>
+                        <div class="db-hero-action-label">System<br>Settings</div>
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -513,10 +750,20 @@
 
 <script>
     function initDashboardCharts() {
+        // Helper: safely destroy existing Chart.js instance before (re-)creating
+        function destroyChart(canvas) {
+            if (!canvas) return;
+            var existing = (typeof Chart !== 'undefined' && Chart.getChart) ? Chart.getChart(canvas) : null;
+            if (existing) {
+                existing.destroy();
+            }
+        }
+
         // 1. Male vs Female Gender Ratio Doughnut Chart
         const ctxGender = document.getElementById('genderRatioChart');
-        if (ctxGender && !ctxGender._chartInstance) {
-            ctxGender._chartInstance = new Chart(ctxGender.getContext('2d'), {
+        if (ctxGender) {
+            destroyChart(ctxGender);
+            new Chart(ctxGender.getContext('2d'), {
                 type: 'doughnut',
                 data: {
                     labels: ['Male Students', 'Female Students'],
@@ -554,8 +801,9 @@
 
         // 2. Financial Trend Comparative Chart (Income vs Expense)
         const ctxFinance = document.getElementById('financialTrendChart');
-        if (ctxFinance && !ctxFinance._chartInstance) {
-            ctxFinance._chartInstance = new Chart(ctxFinance.getContext('2d'), {
+        if (ctxFinance) {
+            destroyChart(ctxFinance);
+            new Chart(ctxFinance.getContext('2d'), {
                 type: 'bar',
                 data: {
                     labels: <?php echo json_encode($data['months_trend'] ?? ['Month 1', 'Month 2', 'Month 3', 'Month 4', 'Month 5', 'Month 6']); ?>,
@@ -590,7 +838,7 @@
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return context.dataset.label + ': <?php echo $data['currency'] ?? 'Rs.'; ?> ' + Number(context.raw).toLocaleString();
+                                    return context.dataset.label + ': <?php echo addslashes($data['currency'] ?? 'Rs.'); ?> ' + Number(context.raw).toLocaleString();
                                 }
                             }
                         }
@@ -610,7 +858,7 @@
 
         // 3. Class-wise Student Distribution Chart
         const ctxClass = document.getElementById('classDistributionChart');
-        if (ctxClass && !ctxClass._chartInstance) {
+        if (ctxClass) {
             <?php 
                 $cLabels = [];
                 $cCounts = [];
@@ -621,7 +869,8 @@
                     }
                 }
             ?>
-            ctxClass._chartInstance = new Chart(ctxClass.getContext('2d'), {
+            destroyChart(ctxClass);
+            new Chart(ctxClass.getContext('2d'), {
                 type: 'bar',
                 data: {
                     labels: <?php echo json_encode(!empty($cLabels) ? $cLabels : ['Class 1', 'Class 2', 'Class 3']); ?>,

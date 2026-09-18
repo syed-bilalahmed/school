@@ -361,7 +361,13 @@ $publishDate = !empty($notice->publish_date) ? date('d F, Y', strtotime($notice-
 
     <!-- Circular Message Body (Directly editable on screen before print) -->
     <div class="circular-body-text" contenteditable="true" title="Click to edit body before printing">
-<?php echo htmlspecialchars($notice->message ?? ''); ?>
+<?php 
+    if (strip_tags($notice->message ?? '') !== ($notice->message ?? '')) {
+        echo strip_tags($notice->message, '<p><br><b><strong><i><em><u><ul><ol><li><a><span><h1><h2><h3><h4><h5><h6><blockquote><code><table><thead><tbody><tr><th><td><hr>');
+    } else {
+        echo nl2br(htmlspecialchars($notice->message ?? ''));
+    }
+?>
     </div>
 
     <!-- Expiry Note if any -->

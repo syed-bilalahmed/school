@@ -286,6 +286,39 @@ class SettingController extends Controller {
                 $settingModel->deleteSession($_POST['delete_id']);
                 $_SESSION['flash_success'] = 'Session deleted.';
                 $activeTab = 'general';
+
+            } elseif(isset($_POST['generate_api_key'])){
+                $apiKeyModel = $this->model('ApiKey');
+                $clientName = trim($_POST['client_name'] ?? 'Official Mobile App');
+                $rateLimit = (int)($_POST['rate_limit'] ?? 120);
+                $newKey = $apiKeyModel->generateKey(TenantContext::getSchoolId() ?: 1, $clientName, $rateLimit);
+                if ($newKey) {
+                    $_SESSION['flash_success'] = "New API Key generated successfully for '{$clientName}'. Key: " . $newKey['api_key'];
+                    $_SESSION['newly_generated_key'] = $newKey['api_key'];
+                } else {
+                    $_SESSION['flash_error'] = 'Failed to generate API key.';
+                }
+                $activeTab = 'api';
+
+            } elseif(isset($_POST['toggle_api_key'])){
+                $apiKeyModel = $this->model('ApiKey');
+                $keyId = (int)($_POST['key_id'] ?? 0);
+                if ($keyId && $apiKeyModel->toggleStatus($keyId, TenantContext::getSchoolId() ?: 1)) {
+                    $_SESSION['flash_success'] = 'API Key status toggled successfully.';
+                } else {
+                    $_SESSION['flash_error'] = 'Could not update API key status.';
+                }
+                $activeTab = 'api';
+
+            } elseif(isset($_POST['delete_api_key'])){
+                $apiKeyModel = $this->model('ApiKey');
+                $keyId = (int)($_POST['key_id'] ?? 0);
+                if ($keyId && $apiKeyModel->deleteKey($keyId, TenantContext::getSchoolId() ?: 1)) {
+                    $_SESSION['flash_success'] = 'API Key permanently deleted and all sessions revoked.';
+                } else {
+                    $_SESSION['flash_error'] = 'Could not delete API key.';
+                }
+                $activeTab = 'api';
             }
             
             $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') 
@@ -349,6 +382,9 @@ class SettingController extends Controller {
         $menuModel = $this->model('FrontMenu');
         $customLinks = $menuModel ? $menuModel->getCustomLinks() : [];
 
+        $apiKeyModel = $this->model('ApiKey');
+        $apiKeys = $apiKeyModel ? $apiKeyModel->getAllBySchool(TenantContext::getSchoolId() ?: 1) : [];
+
         $data = [
             'settings' => $settings,
             'settings_raw' => $settingsAry,
@@ -360,6 +396,7 @@ class SettingController extends Controller {
             'permissions' => $permissions,
             'grouped_permissions' => $groupedPermissions,
             'matrix' => $matrix,
+            'api_keys' => $apiKeys,
             'active_tab' => $activeTab
         ];
 

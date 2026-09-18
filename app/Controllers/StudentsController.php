@@ -83,9 +83,11 @@ class StudentsController extends Controller {
 
     public function ajaxGetSections($class_id){
         AuthGuard::requirePermission('view_students'); // or view_academics
+        header('Content-Type: application/json; charset=utf-8');
         $sectionModel = $this->model('Section');
         $sections = $sectionModel->getSectionsByClassId($class_id);
         echo json_encode($sections);
+        exit;
     }
 
     public function admission(){
