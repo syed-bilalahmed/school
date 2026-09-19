@@ -1,0 +1,5 @@
+INSTALLED_AT=2026-09-18 22:16:08
+INSTALLER_VERSION=3.8
+ADMIN=super@admin.com
+DATABASE=smartschool_db
+LICENSE_KEY=Installation error: SQLSTATE[HY093]: Invalid parameter number

@@ -5,13 +5,13 @@ class UploadHandler {
     
     // Default allowed extensions and mime types for basic uploads (images, docs, icons)
     private static $allowedExtensions = [
-        'jpg', 'jpeg', 'png', 'gif', 'webp', 'ico', 'svg', 'bmp',
+        'jpg', 'jpeg', 'png', 'gif', 'webp', 'ico', 'bmp',
         'pdf', 'doc', 'docx', 'xls', 'xlsx', 'csv', 'txt'
     ];
     private static $allowedMimeTypes = [
         'image/jpeg', 'image/png', 'image/gif', 'image/webp',
         'image/x-icon', 'image/vnd.microsoft.icon', 'image/ico',
-        'image/svg+xml', 'image/bmp', 'image/x-ms-bmp',
+        'image/bmp', 'image/x-ms-bmp',
         'application/pdf', 
         'application/msword', 
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',

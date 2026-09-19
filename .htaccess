@@ -1,10 +1,24 @@
 <IfModule mod_rewrite.c>
-    Options -Multiviews
+    # Disable directory browsing & multiviews across all folders
+    Options -Indexes -Multiviews
     RewriteEngine On
     RewriteBase /school/
 
     # Pass Authorization header to PHP for API Bearer tokens
     SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+
+    # SEC-03: Block direct access to hidden files, git, sensitive configs, and internal installer scripts
+    RewriteRule ^(\.git|\.env|\.vscode) - [F,L]
+    RewriteRule ^(app|config)/ - [F,L]
+    RewriteRule ^install/(master_schema\.php|setup_db\.php|migrate_.*\.php|update_db_.*\.php) - [F,L]
+
+    # Auto-redirect to installer on first visit if system is not installed yet
+    RewriteCond %{DOCUMENT_ROOT}/school/install/install.lock !-f
+    RewriteCond %{DOCUMENT_ROOT}/school/config/installed.lock !-f
+    RewriteRule ^$ install/ [R=302,L]
+
+    # Allow direct access to install wizard
+    RewriteRule ^install/ - [L]
 
     # Direct access to public folder assets
     RewriteRule ^public/index\.php$ - [L]
@@ -21,6 +35,17 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^((?!public/).*)$ public/index.php?url=$1 [BCTLS,QSA,L]
 </IfModule>
+
+# Block sensitive file extensions
+<FilesMatch "(?i)\.(lock|sql|env|ini|sh|bak|log)$">
+    <IfModule !mod_authz_core.c>
+        Order Allow,Deny
+        Deny from all
+    </IfModule>
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+</FilesMatch>
 
 # ==============================================================================
 # HIGH CONCURRENCY OPTIMIZATIONS (3000+ Users)

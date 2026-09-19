@@ -96,52 +96,21 @@ class AuthGuard {
             $isValid = (!empty($sessionToken) && !empty($requestToken) && hash_equals($sessionToken, $requestToken));
 
             if (!$isValid) {
-                // Self-healing check for legitimate authenticated active sessions:
-                // If user is already logged in (user_id is in session), allow authenticated requests
-                // while rotating the CSRF token to keep state secure and avoid breaking legitimate actions.
-                if (!empty($_SESSION['user_id'])) {
-                    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-                    if (!headers_sent()) {
-                        header('X-CSRF-Token: ' . $_SESSION['csrf_token']);
-                    }
-                    return;
-                }
-
-                $serverHost = $_SERVER['HTTP_HOST'] ?? ($_SERVER['SERVER_NAME'] ?? '');
-                $serverHost = strtolower(explode(':', $serverHost)[0]);
-                $isSameOrigin = false;
-
-                if (!empty($_SERVER['HTTP_ORIGIN'])) {
-                    $originHost = parse_url($_SERVER['HTTP_ORIGIN'], PHP_URL_HOST);
-                    $originHost = strtolower(explode(':', (string)$originHost)[0]);
-                    if (!empty($originHost) && ($originHost === $serverHost || in_array($originHost, ['localhost', '127.0.0.1']))) {
-                        $isSameOrigin = true;
-                    }
-                } elseif (!empty($_SERVER['HTTP_REFERER'])) {
-                    $refHost = parse_url($_SERVER['HTTP_REFERER'], PHP_URL_HOST);
-                    $refHost = strtolower(explode(':', (string)$refHost)[0]);
-                    if (!empty($refHost) && ($refHost === $serverHost || in_array($refHost, ['localhost', '127.0.0.1']))) {
-                        $isSameOrigin = true;
-                    }
-                }
-
-                if ($isSameOrigin) {
-                    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-                    if (!headers_sent()) {
-                        header('X-CSRF-Token: ' . $_SESSION['csrf_token']);
-                    }
-                    return;
-                }
-
+                // Reject forged or invalid state-changing request
+                http_response_code(403);
                 $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
                        || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)
                        || isset($_POST['ajax_submit']);
                 if ($isAjax) {
                     if (ob_get_length()) ob_clean();
-                    header('Content-Type: application/json');
-                    echo json_encode(['success' => false, 'message' => 'Security session expired or invalid token. Please refresh the page.']);
+                    header('Content-Type: application/json; charset=utf-8');
+                    echo json_encode([
+                        'success' => false, 
+                        'message' => 'CSRF security token missing or invalid. Please refresh the page and try again.',
+                        'error' => 'csrf_token_mismatch'
+                    ]);
                 } else {
-                    $_SESSION['flash_error'] = 'Security token refreshed. Please try submitting again.';
+                    $_SESSION['flash_error'] = 'Security verification failed (invalid CSRF token). Please try submitting again.';
                     $referrer = $_SERVER['HTTP_REFERER'] ?? (URLROOT . '/admin/dashboard');
                     header('Location: ' . $referrer);
                 }

@@ -162,7 +162,8 @@ class AuthController extends Controller {
                             $data['success'] = 'A security PIN and password reset link have been emailed to your address. Please check your inbox.';
                         } else {
                             $lastErr = Mailer::getLastError();
-                            $data['success'] = 'Password reset instructions have been generated. ' . (!empty($lastErr) ? '(SMTP Notice: ' . htmlspecialchars($lastErr) . ' | Debug PIN: ' . $pin . ' | <a href="' . $resetLink . '">Click here to continue</a>)' : 'Please check your email.');
+                            error_log('[PasswordReset] Mail delivery failed for ' . $user->email . ': ' . $lastErr . ' (PIN: ' . $pin . ')');
+                            $data['success'] = 'If an account matches this email, password reset instructions have been generated. Please check your inbox or contact your school administrator if delivery is delayed.';
                         }
                     }
                 }
@@ -229,6 +230,10 @@ class AuthController extends Controller {
     }
 
     public function createUserSession($user){
+        // Regenerate session ID to prevent Session Fixation attacks
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_regenerate_id(true);
+        }
         $schoolId = !empty($user->school_id) ? (int)$user->school_id : 1;
         $_SESSION['user_id'] = $user->id;
         $_SESSION['user_email'] = $user->email;

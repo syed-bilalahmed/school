@@ -310,8 +310,16 @@ class User {
         if ($id <= 1) {
             return false;
         }
-        $this->db->query("DELETE FROM users WHERE id = :id");
-        $this->db->bind(':id', $id);
+        $isSuperAdmin = isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'super_admin';
+        if (!$isSuperAdmin && class_exists('TenantContext')) {
+            $currentSchoolId = (int)TenantContext::getSchoolId();
+            $this->db->query("DELETE FROM users WHERE id = :id AND school_id = :school_id");
+            $this->db->bind(':id', $id);
+            $this->db->bind(':school_id', $currentSchoolId);
+        } else {
+            $this->db->query("DELETE FROM users WHERE id = :id");
+            $this->db->bind(':id', $id);
+        }
         return $this->db->execute();
     }
 
@@ -347,6 +355,13 @@ class User {
         $existingUser = $this->getUserById($id);
         if (!$existingUser) {
             return ['success' => false, 'message' => 'User account could not be found.'];
+        }
+
+        // Enforce tenant isolation for non-super admins
+        $currentSchoolId = class_exists('TenantContext') ? TenantContext::getSchoolId() : 1;
+        $isSuperAdmin = isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'super_admin';
+        if (!$isSuperAdmin && !empty($existingUser->school_id) && (int)$existingUser->school_id !== (int)$currentSchoolId) {
+            return ['success' => false, 'message' => 'Unauthorized: You cannot edit users from another school.'];
         }
 
         // Primary Super Admin (id = 1) cannot be demoted from admin/super_admin
@@ -468,14 +483,6 @@ class User {
      * Strictly excludes super_admin as requested.
      */
     public function ensureRoleDemoAccounts() {
-        // Ensure users table role column supports standard string names
-        try {
-            $this->db->query("ALTER TABLE users MODIFY COLUMN role VARCHAR(50) NOT NULL");
-            $this->db->execute();
-        } catch (Throwable $t) {
-            // Ignore if already modified or no permission
-        }
-
         $schoolId = 1;
         if (class_exists('TenantContext') && TenantContext::getSchoolId()) {
             $schoolId = (int)TenantContext::getSchoolId();
@@ -572,13 +579,7 @@ class User {
                     $this->db->execute();
                     $targetUserId = $this->db->lastInsertId();
                 } else {
-                    $hashed = password_hash($info['password'], PASSWORD_DEFAULT);
-                    $this->db->query("UPDATE users SET password = :password, role = :role, school_id = COALESCE(school_id, :school_id) WHERE id = :id");
-                    $this->db->bind(':password', $hashed);
-                    $this->db->bind(':role', $rKey);
-                    $this->db->bind(':school_id', $schoolId);
-                    $this->db->bind(':id', $existing->id);
-                    $this->db->execute();
+                    // Do NOT overwrite existing user passwords; simply preserve existing ID
                     $targetUserId = $existing->id;
                 }
 

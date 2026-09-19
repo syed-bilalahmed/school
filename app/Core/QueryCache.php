@@ -1,11 +1,12 @@
 <?php
 /**
- * QueryCache — High-Performance In-Memory & File Query Cache
+ * QueryCache — High-Performance Distributed In-Memory & File Query Cache
  *
- * Automatically leverages APCu shared memory when enabled in PHP.
- * Gracefully falls back to high-speed file cache + per-request static memory.
- * Eliminates redundant DB hits for frequently read reference data
- * (settings, classes, sections, fee types, academic sessions).
+ * Designed for 100,000+ Concurrent Users:
+ * 1. Per-Request Static RAM: Zero-latency instantaneous reads within the same request lifecycle.
+ * 2. Redis Distributed RAM: Shared across all load-balanced web servers in a multi-node cluster.
+ * 3. APCu Shared RAM: Local in-memory cache when running on single-node PHP-FPM.
+ * 4. High-Speed Atomic File Cache: Durable zero-dependency fallback.
  *
  * Usage:
  *   $settings = QueryCache::remember('school_settings_' . $schoolId, 300, function() use ($schoolId) {
@@ -17,6 +18,41 @@ class QueryCache {
     private static array $requestMemory = [];
     private static ?string $cacheDir = null;
     private static ?bool $hasApcu = null;
+    private static $redisInstance = null;
+    private static bool $redisChecked = false;
+
+    /**
+     * Get or initialize Redis connection if configured.
+     */
+    private static function getRedis() {
+        if (self::$redisChecked) {
+            return self::$redisInstance;
+        }
+        self::$redisChecked = true;
+
+        if (defined('REDIS_HOST') && extension_loaded('redis')) {
+            try {
+                $redis = new Redis();
+                $host = REDIS_HOST;
+                $port = defined('REDIS_PORT') ? (int)REDIS_PORT : 6379;
+                $pass = defined('REDIS_PASSWORD') ? REDIS_PASSWORD : null;
+                $timeout = 1.0; // Fast timeout for cache
+
+                if ($redis->connect($host, $port, $timeout)) {
+                    if (!empty($pass)) {
+                        $redis->auth($pass);
+                    }
+                    $redis->setOption(Redis::OPT_SERIALIZER, Redis::SERIALIZER_PHP);
+                    $redis->setOption(Redis::OPT_PREFIX, 'qc:');
+                    self::$redisInstance = $redis;
+                    return self::$redisInstance;
+                }
+            } catch (Throwable $e) {
+                error_log('[QueryCache Redis] ' . $e->getMessage());
+            }
+        }
+        return null;
+    }
 
     /**
      * Check if APCu is available and active.
@@ -58,7 +94,21 @@ class QueryCache {
             return self::$requestMemory[$key];
         }
 
-        // 2. Check APCu shared RAM
+        // 2. Check Redis (distributed across all load-balanced web servers)
+        $redis = self::getRedis();
+        if ($redis !== null) {
+            try {
+                $data = $redis->get($key);
+                if ($data !== false) {
+                    self::$requestMemory[$key] = $data;
+                    return $data;
+                }
+            } catch (Throwable $e) {
+                error_log('[QueryCache Redis Read] ' . $e->getMessage());
+            }
+        }
+
+        // 3. Check APCu shared RAM
         if (self::hasApcu()) {
             $success = false;
             $data = apcu_fetch('qc_' . $key, $success);
@@ -67,7 +117,7 @@ class QueryCache {
                 return $data;
             }
         } else {
-            // 3. Check File Cache
+            // 4. Check File Cache
             $file = self::getDir() . '/' . md5($key) . '.cache';
             if (file_exists($file)) {
                 $raw = @file_get_contents($file);
@@ -81,10 +131,10 @@ class QueryCache {
             }
         }
 
-        // 4. Miss — execute callback
+        // 5. Miss — execute callback
         $value = $callback();
 
-        // 5. Save in memory & cache
+        // 6. Save in memory & cache
         self::set($key, $value, $ttl);
 
         return $value;
@@ -95,6 +145,17 @@ class QueryCache {
      */
     public static function set(string $key, $value, int $ttl = 300): void {
         self::$requestMemory[$key] = $value;
+
+        // Save in Redis
+        $redis = self::getRedis();
+        if ($redis !== null) {
+            try {
+                $redis->setex($key, $ttl, $value);
+                return;
+            } catch (Throwable $e) {
+                error_log('[QueryCache Redis Write] ' . $e->getMessage());
+            }
+        }
 
         if (self::hasApcu()) {
             apcu_store('qc_' . $key, $value, $ttl);
@@ -116,6 +177,13 @@ class QueryCache {
     public static function forget(string $key): void {
         unset(self::$requestMemory[$key]);
 
+        $redis = self::getRedis();
+        if ($redis !== null) {
+            try {
+                $redis->del($key);
+            } catch (Throwable $e) {}
+        }
+
         if (self::hasApcu()) {
             apcu_delete('qc_' . $key);
         }
@@ -131,6 +199,16 @@ class QueryCache {
      */
     public static function flush(): void {
         self::$requestMemory = [];
+
+        $redis = self::getRedis();
+        if ($redis !== null) {
+            try {
+                $keys = $redis->keys('qc:*');
+                if (!empty($keys)) {
+                    $redis->del($keys);
+                }
+            } catch (Throwable $e) {}
+        }
 
         if (self::hasApcu()) {
             apcu_clear_cache();

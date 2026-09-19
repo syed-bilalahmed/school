@@ -92,20 +92,31 @@ class RateLimiter {
      * Get the client IP address (handles proxies safely).
      */
     public static function clientIp(): string {
-        $headers = ['HTTP_CF_CONNECTING_IP', 'HTTP_X_REAL_IP'];
-        foreach ($headers as $h) {
-            if (!empty($_SERVER[$h])) {
-                $ip = filter_var(trim($_SERVER[$h]), FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
-                if ($ip) return $ip;
+        $remoteAddr = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+
+        // Check proxy headers only if REMOTE_ADDR is an established local or configured trusted proxy
+        $trustedProxies = ['127.0.0.1', '::1'];
+        if (defined('TRUSTED_PROXIES') && is_array(TRUSTED_PROXIES)) {
+            $trustedProxies = array_merge($trustedProxies, TRUSTED_PROXIES);
+        }
+
+        if (in_array($remoteAddr, $trustedProxies, true)) {
+            $headers = ['HTTP_CF_CONNECTING_IP', 'HTTP_X_REAL_IP'];
+            foreach ($headers as $h) {
+                if (!empty($_SERVER[$h])) {
+                    $ip = filter_var(trim($_SERVER[$h]), FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
+                    if ($ip) return $ip;
+                }
+            }
+            if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+                foreach (explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']) as $ip) {
+                    $ip = filter_var(trim($ip), FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
+                    if ($ip) return $ip;
+                }
             }
         }
-        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            foreach (explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']) as $ip) {
-                $ip = filter_var(trim($ip), FILTER_VALIDATE_IP);
-                if ($ip) return $ip;
-            }
-        }
-        return $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+
+        return $remoteAddr;
     }
 
     /**

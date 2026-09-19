@@ -28,11 +28,13 @@ class ApiKey {
     }
 
     /**
-     * Find an API key by its raw key string
+     * Find an API key by its raw key string or SHA-256 hash
      */
     public function findByKey($apiKey) {
-        $this->db->query("SELECT * FROM api_keys WHERE api_key = :api_key LIMIT 1");
+        $keyHash = hash('sha256', trim($apiKey));
+        $this->db->query("SELECT * FROM api_keys WHERE api_key = :api_key OR api_key = :key_hash LIMIT 1");
         $this->db->bind(':api_key', trim($apiKey));
+        $this->db->bind(':key_hash', $keyHash);
         return $this->db->single();
     }
 
@@ -97,10 +99,11 @@ class ApiKey {
     }
 
     /**
-     * Create mobile user session Bearer token
+     * Create mobile user session Bearer token (stored as SHA-256 hash)
      */
     public function createUserToken($userId, $schoolId, $apiKeyId = null, $deviceName = 'Mobile App', $devicePlatform = 'android', $daysValid = 30) {
-        $token = 'usr_' . bin2hex(random_bytes(36));
+        $rawToken = 'usr_' . bin2hex(random_bytes(36));
+        $tokenHash = hash('sha256', $rawToken);
         $expiresAt = date('Y-m-d H:i:s', strtotime("+{$daysValid} days"));
 
         $this->db->query("INSERT INTO api_user_tokens (school_id, user_id, api_key_id, token, device_name, device_platform, expires_at, created_at)
@@ -108,14 +111,14 @@ class ApiKey {
         $this->db->bind(':school_id', (int)$schoolId);
         $this->db->bind(':user_id', (int)$userId);
         $this->db->bind(':api_key_id', !empty($apiKeyId) ? (int)$apiKeyId : null);
-        $this->db->bind(':token', $token);
+        $this->db->bind(':token', $tokenHash);
         $this->db->bind(':device_name', trim($deviceName));
         $this->db->bind(':device_platform', strtolower(trim($devicePlatform)));
         $this->db->bind(':expires_at', $expiresAt);
 
         if ($this->db->execute()) {
             return [
-                'token' => $token,
+                'token' => $rawToken,
                 'expires_at' => $expiresAt
             ];
         }
@@ -126,8 +129,11 @@ class ApiKey {
      * Revoke / expire a specific Bearer token
      */
     public function revokeUserToken($token) {
-        $this->db->query("DELETE FROM api_user_tokens WHERE token = :token");
-        $this->db->bind(':token', trim($token));
+        $clean = trim($token);
+        $tokenHash = hash('sha256', $clean);
+        $this->db->query("DELETE FROM api_user_tokens WHERE token = :token OR token = :token_hash");
+        $this->db->bind(':token', $clean);
+        $this->db->bind(':token_hash', $tokenHash);
         return $this->db->execute();
     }
 }

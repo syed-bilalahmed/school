@@ -1,0 +1,187 @@
+version: '3.8'
+
+# ==============================================================================
+# ENTERPRISE LOAD-BALANCED DOCKER CLUSTER (100,000 CONCURRENT USERS)
+# Topology:
+# [ NGINX Load Balancer: Port 80/443 ]
+#        │
+#   ┌────┴────────────────────────┬────────────────────────┐
+#   ▼                             ▼                        ▼
+# [ Web Node 01 ]           [ Web Node 02 ]          [ Web Node 03 ]
+#   │                             │                        │
+#   └───────────────┬─────────────┴────────────────────────┘
+#                   ▼
+#       [ Redis Session & Query Cache ]
+#                   ▼
+#   ┌───────────────┴───────────────┐
+#   ▼                               ▼
+# [ MySQL Master (Writes) ]     [ MySQL Replica (Reads) ]
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. NGINX LOAD BALANCER (Reverse Proxy & Traffic Dispatcher)
+  # ----------------------------------------------------------------------------
+  loadbalancer:
+    image: nginx:alpine
+    container_name: school_lb
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx-loadbalancer.conf:/etc/nginx/nginx.conf:ro
+      - ../public/assets:/var/www/html/public/assets:ro
+    depends_on:
+      - web1
+      - web2
+      - web3
+    networks:
+      - school_net
+
+  # ----------------------------------------------------------------------------
+  # 2. WEB APPLICATION CLUSTER (Stateless PHP-FPM / Apache Nodes)
+  # ----------------------------------------------------------------------------
+  web1:
+    image: php:8.2-apache
+    container_name: school_web_1
+    restart: always
+    environment:
+      - DB_HOST=db_master
+      - DB_READ_HOSTS=db_replica
+      - DB_NAME=smartschool_db
+      - DB_USER=school_user
+      - DB_PASS=SecretPass2026!
+      - SESSION_DRIVER=redis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    volumes:
+      - ../:/var/www/html
+    depends_on:
+      - db_master
+      - db_replica
+      - redis
+    networks:
+      - school_net
+
+  web2:
+    image: php:8.2-apache
+    container_name: school_web_2
+    restart: always
+    environment:
+      - DB_HOST=db_master
+      - DB_READ_HOSTS=db_replica
+      - DB_NAME=smartschool_db
+      - DB_USER=school_user
+      - DB_PASS=SecretPass2026!
+      - SESSION_DRIVER=redis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    volumes:
+      - ../:/var/www/html
+    depends_on:
+      - db_master
+      - db_replica
+      - redis
+    networks:
+      - school_net
+
+  web3:
+    image: php:8.2-apache
+    container_name: school_web_3
+    restart: always
+    environment:
+      - DB_HOST=db_master
+      - DB_READ_HOSTS=db_replica
+      - DB_NAME=smartschool_db
+      - DB_USER=school_user
+      - DB_PASS=SecretPass2026!
+      - SESSION_DRIVER=redis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    volumes:
+      - ../:/var/www/html
+    depends_on:
+      - db_master
+      - db_replica
+      - redis
+    networks:
+      - school_net
+
+  # ----------------------------------------------------------------------------
+  # 3. REDIS DISTRIBUTED SESSION & QUERY CACHE
+  # ----------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: school_redis
+    restart: always
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "2gb", "--maxmemory-policy", "allkeys-lru"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - school_net
+
+  # ----------------------------------------------------------------------------
+  # 4. PRIMARY DATABASE (Master for INSERT, UPDATE, DELETE & Transactions)
+  # ----------------------------------------------------------------------------
+  db_master:
+    image: mysql:8.0
+    container_name: school_db_master
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: RootMasterPass2026!
+      MYSQL_DATABASE: smartschool_db
+      MYSQL_USER: school_user
+      MYSQL_PASSWORD: SecretPass2026!
+    command: >
+      --server-id=1
+      --log-bin=mysql-bin
+      --binlog-format=ROW
+      --max_connections=5000
+      --innodb_buffer_pool_size=4G
+      --innodb_log_file_size=1G
+      --innodb_flush_log_at_trx_commit=2
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_master_data:/var/lib/mysql
+    networks:
+      - school_net
+
+  # ----------------------------------------------------------------------------
+  # 5. READ REPLICA DATABASE (Slave for SELECT queries & Record Fetching)
+  # ----------------------------------------------------------------------------
+  db_replica:
+    image: mysql:8.0
+    container_name: school_db_replica
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: RootMasterPass2026!
+      MYSQL_DATABASE: smartschool_db
+      MYSQL_USER: school_user
+      MYSQL_PASSWORD: SecretPass2026!
+    command: >
+      --server-id=2
+      --relay-log=mysql-relay-bin
+      --read-only=1
+      --max_connections=10000
+      --innodb_buffer_pool_size=4G
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_replica_data:/var/lib/mysql
+    depends_on:
+      - db_master
+    networks:
+      - school_net
+
+volumes:
+  redis_data:
+  db_master_data:
+  db_replica_data:
+
+networks:
+  school_net:
+    driver: bridge

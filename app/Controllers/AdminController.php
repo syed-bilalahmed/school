@@ -308,6 +308,14 @@ class AdminController extends Controller {
     public function schoolStatus($id = null, $status = null){
         $this->requireSuperAdmin();
 
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: ' . URLROOT . '/admin/schools');
+            exit;
+        }
+        if (class_exists('AuthGuard')) {
+            AuthGuard::verifyCSRF();
+        }
+
         if (!$id || !in_array($status, ['active', 'suspended', 'pending'], true)) {
             header('Location: ' . URLROOT . '/admin/schools');
             exit;
@@ -323,14 +331,18 @@ class AdminController extends Controller {
     public function deleteSchool($id = null){
         $this->requireSuperAdmin();
 
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: ' . URLROOT . '/admin/schools');
+            exit;
+        }
+        if (class_exists('AuthGuard')) {
+            AuthGuard::verifyCSRF();
+        }
+
         $id = (int)$id;
         if (!$id) {
             header('Location: ' . URLROOT . '/admin/schools');
             exit;
-        }
-
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && class_exists('AuthGuard')) {
-            AuthGuard::verifyCSRF();
         }
 
         if ($id <= 1) {
@@ -527,14 +539,18 @@ class AdminController extends Controller {
             exit;
         }
 
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: ' . URLROOT . '/admin/users');
+            exit;
+        }
+        if (class_exists('AuthGuard')) {
+            AuthGuard::verifyCSRF();
+        }
+
         $id = (int)$id;
         if (!$id) {
             header('Location: ' . URLROOT . '/admin/users');
             exit;
-        }
-
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && class_exists('AuthGuard')) {
-            AuthGuard::verifyCSRF();
         }
 
         if ($id <= 1 || $id === (int)($_SESSION['user_id'] ?? 0)) {

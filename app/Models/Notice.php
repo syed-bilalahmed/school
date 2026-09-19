@@ -485,12 +485,15 @@ class Notice {
         try {
             $db = new Database;
             self::ensureNoticeDocuments();
+            $schoolId = class_exists('TenantContext') ? (TenantContext::getSchoolId() ?: 1) : 1;
 
             $db->query("SELECT nb.*, COALESCE(u.name, 'Principal Office') as created_by_name, u.role as created_by_role 
                         FROM notice_board nb
                         LEFT JOIN users u ON nb.created_by = u.id
-                        WHERE (nb.status IS NULL OR nb.status = 'Published')
+                        WHERE (nb.school_id = :sid OR nb.school_id IS NULL) 
+                          AND (nb.status IS NULL OR nb.status = 'Published')
                         ORDER BY nb.publish_date DESC, nb.id DESC");
+            $db->bind(':sid', $schoolId);
             $notices = $db->resultSet() ?: [];
 
             if (count($notices) < 4) {
@@ -498,8 +501,10 @@ class Notice {
                 $db->query("SELECT nb.*, COALESCE(u.name, 'Principal Office') as created_by_name, u.role as created_by_role 
                             FROM notice_board nb
                             LEFT JOIN users u ON nb.created_by = u.id
-                            WHERE (nb.status IS NULL OR nb.status = 'Published')
+                            WHERE (nb.school_id = :sid OR nb.school_id IS NULL) 
+                              AND (nb.status IS NULL OR nb.status = 'Published')
                             ORDER BY nb.publish_date DESC, nb.id DESC");
+                $db->bind(':sid', $schoolId);
                 $notices = $db->resultSet() ?: [];
             }
 
@@ -515,8 +520,10 @@ class Notice {
                 $db->query("SELECT nb.*, COALESCE(u.name, 'Principal Office') as created_by_name, u.role as created_by_role 
                             FROM notice_board nb
                             LEFT JOIN users u ON nb.created_by = u.id
-                            WHERE (nb.status IS NULL OR nb.status = 'Published')
+                            WHERE (nb.school_id = :sid OR nb.school_id IS NULL) 
+                              AND (nb.status IS NULL OR nb.status = 'Published')
                             ORDER BY nb.publish_date DESC, nb.id DESC");
+                $db->bind(':sid', $schoolId);
                 $notices = $db->resultSet() ?: [];
             }
 

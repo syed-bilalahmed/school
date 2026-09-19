@@ -44,19 +44,12 @@ class ApiGuard {
             }
         }
 
-        // Fallback to query parameter (convenient for quick testing/webhooks)
-        if (!empty($_GET['apikey'])) {
-            return trim($_GET['apikey']);
-        }
-        if (!empty($_GET['api_key'])) {
-            return trim($_GET['api_key']);
-        }
-
+        // Fallback: only standard HTTP headers are accepted for credentials (no query string leakage)
         return null;
     }
 
     /**
-     * Extract Bearer token from headers or request parameters
+     * Extract Bearer token from headers
      */
     public static function extractBearerToken() {
         $authHeader = '';
@@ -79,10 +72,6 @@ class ApiGuard {
             return trim($matches[1]);
         }
 
-        if (!empty($_GET['token'])) {
-            return trim($_GET['token']);
-        }
-
         return null;
     }
 
@@ -100,8 +89,10 @@ class ApiGuard {
 
         try {
             $db = new Database();
-            $db->query("SELECT * FROM api_keys WHERE api_key = :api_key LIMIT 1");
+            $keyHash = hash('sha256', $apiKey);
+            $db->query("SELECT * FROM api_keys WHERE (api_key = :api_key OR api_key = :key_hash) LIMIT 1");
             $db->bind(':api_key', $apiKey);
+            $db->bind(':key_hash', $keyHash);
             $client = $db->single();
 
             if (!$client) {
@@ -145,13 +136,15 @@ class ApiGuard {
 
         try {
             $db = new Database();
+            $tokenHash = hash('sha256', $token);
             $db->query("SELECT t.id as token_id, t.expires_at, t.device_name,
                                u.id, u.name, u.email, u.role, u.school_id, u.status
                         FROM api_user_tokens t
                         INNER JOIN users u ON t.user_id = u.id
-                        WHERE t.token = :token AND t.school_id = :school_id
+                        WHERE (t.token = :token OR t.token = :token_hash) AND t.school_id = :school_id
                         LIMIT 1");
             $db->bind(':token', $token);
+            $db->bind(':token_hash', $tokenHash);
             $db->bind(':school_id', $client->school_id);
             $user = $db->single();
 

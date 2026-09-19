@@ -614,18 +614,6 @@ class ApiController extends Controller {
         $targetStudentId = $this->authorizeStudentAccess($user, null, $schoolId);
 
         $db = new Database();
-        // Check / update submission status
-        $db->query("CREATE TABLE IF NOT EXISTS homework_submissions (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            homework_id INT NOT NULL,
-            student_id INT NOT NULL,
-            submission_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-            notes TEXT NULL,
-            status VARCHAR(20) DEFAULT 'submitted',
-            UNIQUE KEY uk_hw_student (homework_id, student_id)
-        )");
-        $db->execute();
-
         $db->query("INSERT INTO homework_submissions (homework_id, student_id, notes, status, submission_date)
                     VALUES (:hid, :sid, :notes, 'submitted', NOW())
                     ON DUPLICATE KEY UPDATE notes = :notes_up, submission_date = NOW(), status = 'submitted'");
@@ -912,29 +900,43 @@ class ApiController extends Controller {
             ApiGuard::jsonError('Fee voucher record not found.', 404);
         }
 
-        // Insert payment
-        $db->query("INSERT INTO fee_payments (school_id, student_fee_id, payment_mode, amount, payment_date, reference_no, notes)
-                    VALUES (:sid, :sfid, :mode, :amt, :pdate, :ref, :notes)");
-        $db->bind(':sid', $schoolId);
-        $db->bind(':sfid', $studentFeeId);
-        $db->bind(':mode', $paymentMode);
-        $db->bind(':amt', $amount);
-        $db->bind(':pdate', $paymentDate);
-        $db->bind(':ref', $refNo);
-        $db->bind(':notes', $note);
-        $db->execute();
-        $paymentId = $db->lastInsertId();
+        $pdo = Database::getPdo();
+        $pdo->beginTransaction();
 
-        // Update student_fees paid_amount and status
-        $newPaid = (float)$feeRecord->paid_amount + $amount;
-        $totalBill = (float)$feeRecord->amount + (float)$feeRecord->fine - (float)$feeRecord->discount;
-        $status = ($newPaid >= $totalBill) ? 'paid' : 'partial';
+        try {
+            // Insert payment
+            $db->query("INSERT INTO fee_payments (school_id, student_fee_id, payment_mode, amount, payment_date, reference_no, notes)
+                        VALUES (:sid, :sfid, :mode, :amt, :pdate, :ref, :notes)");
+            $db->bind(':sid', $schoolId);
+            $db->bind(':sfid', $studentFeeId);
+            $db->bind(':mode', $paymentMode);
+            $db->bind(':amt', $amount);
+            $db->bind(':pdate', $paymentDate);
+            $db->bind(':ref', $refNo);
+            $db->bind(':notes', $note);
+            $db->execute();
+            $paymentId = $db->lastInsertId();
 
-        $db->query("UPDATE student_fees SET paid_amount = :paid, status = :status WHERE id = :id");
-        $db->bind(':paid', $newPaid);
-        $db->bind(':status', $status);
-        $db->bind(':id', $studentFeeId);
-        $db->execute();
+            // Update student_fees paid_amount and status
+            $newPaid = (float)$feeRecord->paid_amount + $amount;
+            $totalBill = (float)$feeRecord->amount + (float)$feeRecord->fine - (float)$feeRecord->discount;
+            $status = ($newPaid >= $totalBill) ? 'paid' : 'partial';
+
+            $db->query("UPDATE student_fees SET paid_amount = :paid, status = :status WHERE id = :id AND school_id = :sid");
+            $db->bind(':paid', $newPaid);
+            $db->bind(':status', $status);
+            $db->bind(':id', $studentFeeId);
+            $db->bind(':sid', $schoolId);
+            $db->execute();
+
+            $pdo->commit();
+        } catch (Throwable $e) {
+            if ($pdo && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            error_log('[collectFee] Payment transaction failed: ' . $e->getMessage());
+            ApiGuard::jsonError('Database transaction failed while recording fee collection.', 500);
+        }
 
         ApiGuard::jsonSuccess([
             'payment_id' => $paymentId,
@@ -1074,7 +1076,8 @@ class ApiController extends Controller {
         $fatherName = trim($input['father_name'] ?? '');
         $address = trim($input['address'] ?? '');
         $email = trim($input['email'] ?? '');
-        $password = !empty($input['password']) ? trim($input['password']) : '123456';
+        $hasCustomPass = !empty($input['password']);
+        $password = $hasCustomPass ? trim($input['password']) : bin2hex(random_bytes(4)) . '!Aa';
 
         if (empty($name) || empty($admissionNo) || !$classId) {
             ApiGuard::jsonError('Student Name, Admission Number, and Class ID are required.', 422);
@@ -1126,14 +1129,17 @@ class ApiController extends Controller {
         $studentId = $studentModel->registerStudent($stData, $userId);
 
         if ($studentId) {
-            ApiGuard::jsonSuccess([
+            $respData = [
                 'student_id' => $studentId,
                 'user_id' => $userId,
                 'admission_no' => $admissionNo,
                 'name' => $name,
-                'login_email' => $email,
-                'initial_password' => $password
-            ], 'Student admission registered successfully.');
+                'login_email' => $email
+            ];
+            if (!$hasCustomPass) {
+                $respData['temporary_password'] = $password;
+            }
+            ApiGuard::jsonSuccess($respData, 'Student admission registered successfully.');
         } else {
             ApiGuard::jsonError('Failed to register student admission.', 500);
         }
@@ -1468,7 +1474,15 @@ class ApiController extends Controller {
         }
 
         if (!empty($requestedStudentId)) {
-            return (int)$requestedStudentId;
+            $reqId = (int)$requestedStudentId;
+            $db->query("SELECT id FROM students WHERE id = :id AND school_id = :sid LIMIT 1");
+            $db->bind(':id', $reqId);
+            $db->bind(':sid', $schoolId);
+            $found = $db->single();
+            if (!$found) {
+                ApiGuard::jsonError('Student not found in this school context.', 404);
+            }
+            return (int)$found->id;
         }
 
         // For Staff/Admin without student_id parameter, try fetching the first active student
