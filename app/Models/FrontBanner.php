@@ -20,7 +20,11 @@ class FrontBanner {
         $this->db->bind(':link', $data['link']);
         $this->db->bind(':desc', $data['description']);
         $this->db->bind(':order', $data['sort_order']);
-        return $this->db->execute();
+        $res = $this->db->execute();
+        if ($res && class_exists('QueryCache')) {
+            QueryCache::forget('front_banners_' . TenantContext::getSchoolId());
+        }
+        return $res;
     }
 
     public function deleteBanner($id){
@@ -35,6 +39,10 @@ class FrontBanner {
         $this->db->query("DELETE FROM front_banners WHERE id = :id AND school_id = :school_id");
         $this->db->bind(':school_id', TenantContext::getSchoolId());
         $this->db->bind(':id', $id);
-        return $this->db->execute();
+        $res = $this->db->execute();
+        if ($res && class_exists('QueryCache')) {
+            QueryCache::forget('front_banners_' . TenantContext::getSchoolId());
+        }
+        return $res;
     }
 }

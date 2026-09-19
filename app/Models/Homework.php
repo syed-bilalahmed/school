@@ -21,7 +21,7 @@ class Homework {
     }
 
     public function getHomework($class_id=null, $section_id=null, $subject_id=null){
-        $sql = "SELECT h.*, c.class_name, sec.section_name, sub.subject_name 
+        $sql = "SELECT h.*, c.class_name, sec.section_name, COALESCE(sub.subject_name, sub.name) as subject_name 
                 FROM homework h
                 JOIN classes c ON h.class_id = c.id
                 JOIN sections sec ON h.section_id = sec.id
@@ -44,7 +44,7 @@ class Homework {
     }
 
     public function getHomeworkById($id){
-        $this->db->query("SELECT h.*, c.class_name, sec.section_name, sub.subject_name 
+        $this->db->query("SELECT h.*, c.class_name, sec.section_name, COALESCE(sub.subject_name, sub.name) as subject_name 
                 FROM homework h
                 JOIN classes c ON h.class_id = c.id
                 JOIN sections sec ON h.section_id = sec.id

@@ -253,7 +253,7 @@ class Certificate {
         }
 
         // Fetch Papers Timetable Schedule for this Class & Exam
-        $this->db->query("SELECT es.*, sub.subject_name, sub.subject_code, sub.is_core, sub.full_marks
+        $this->db->query("SELECT es.*, COALESCE(sub.subject_name, sub.name) as subject_name, COALESCE(sub.subject_code, sub.code) as subject_code, sub.is_core, sub.full_marks
                           FROM exam_schedules es
                           JOIN subjects sub ON es.subject_id = sub.id
                           WHERE es.exam_id = :eid AND es.class_id = :cid AND es.school_id = :school_id

@@ -250,6 +250,10 @@ class AuthController extends Controller {
         // Initialize tenant context for this session
         if (class_exists('TenantContext')) {
             TenantContext::setSchoolId($schoolId);
+            $sch = TenantContext::findSchoolById($schoolId);
+            if ($sch && !empty($sch->name)) {
+                $_SESSION['school_name'] = $sch->name;
+            }
         }
         
         // Redirect based on role

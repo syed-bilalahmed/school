@@ -41,7 +41,8 @@ class AdminController extends Controller {
         // 2. Financial Metrics: Fee Collections This Month
         $monthFees = 0;
         try {
-            $db->query("SELECT SUM(amount) as total FROM fee_payments WHERE MONTH(date) = MONTH(CURRENT_DATE()) AND YEAR(date) = YEAR(CURRENT_DATE())");
+            $db->query("SELECT SUM(amount) as total FROM fee_payments WHERE (school_id = :school_id OR school_id IS NULL) AND MONTH(date) = MONTH(CURRENT_DATE()) AND YEAR(date) = YEAR(CURRENT_DATE())");
+            $db->bind(':school_id', $schoolId);
             $mfRow = $db->single();
             $monthFees = (float)($mfRow->total ?? 0);
         } catch (Exception $e) {}
@@ -49,7 +50,8 @@ class AdminController extends Controller {
         // Pending Fee Balance / Dues
         $pendingDues = 0;
         try {
-            $db->query("SELECT SUM(balance) as total FROM student_fees WHERE balance > 0");
+            $db->query("SELECT SUM(balance) as total FROM student_fees WHERE (school_id = :school_id OR school_id IS NULL) AND balance > 0");
+            $db->bind(':school_id', $schoolId);
             $pdRow = $db->single();
             $pendingDues = (float)($pdRow->total ?? 0);
         } catch (Exception $e) {}
@@ -57,7 +59,8 @@ class AdminController extends Controller {
         // Expenses This Month
         $monthExpenses = 0;
         try {
-            $db->query("SELECT SUM(amount) as total FROM expenses WHERE MONTH(date) = MONTH(CURRENT_DATE()) AND YEAR(date) = YEAR(CURRENT_DATE())");
+            $db->query("SELECT SUM(amount) as total FROM expenses WHERE (school_id = :school_id OR school_id IS NULL) AND MONTH(date) = MONTH(CURRENT_DATE()) AND YEAR(date) = YEAR(CURRENT_DATE())");
+            $db->bind(':school_id', $schoolId);
             $meRow = $db->single();
             $monthExpenses = (float)($meRow->total ?? 0);
         } catch (Exception $e) {}
@@ -65,14 +68,16 @@ class AdminController extends Controller {
         // 3. Operational: Visitors Today & Exit Clearances
         $todayVisitors = 0;
         try {
-            $db->query("SELECT COUNT(*) as total FROM visitor_book WHERE date = CURRENT_DATE()");
+            $db->query("SELECT COUNT(*) as total FROM visitor_book WHERE (school_id = :school_id OR school_id IS NULL) AND date = CURRENT_DATE()");
+            $db->bind(':school_id', $schoolId);
             $vRow = $db->single();
             $todayVisitors = (int)($vRow->total ?? 0);
         } catch (Exception $e) {}
 
         $pendingClearances = 0;
         try {
-            $db->query("SELECT COUNT(*) as total FROM student_clearances WHERE overall_status = 'In Progress'");
+            $db->query("SELECT COUNT(*) as total FROM student_clearances WHERE (school_id = :school_id OR school_id IS NULL) AND overall_status = 'In Progress'");
+            $db->bind(':school_id', $schoolId);
             $cRow = $db->single();
             $pendingClearances = (int)($cRow->total ?? 0);
         } catch (Exception $e) {}
@@ -90,7 +95,8 @@ class AdminController extends Controller {
 
             $incVal = 0;
             try {
-                $db->query("SELECT SUM(amount) as total FROM fee_payments WHERE MONTH(date) = :m AND YEAR(date) = :y");
+                $db->query("SELECT SUM(amount) as total FROM fee_payments WHERE (school_id = :school_id OR school_id IS NULL) AND MONTH(date) = :m AND YEAR(date) = :y");
+                $db->bind(':school_id', $schoolId);
                 $db->bind(':m', $mNum);
                 $db->bind(':y', $yNum);
                 $incR = $db->single();
@@ -100,7 +106,8 @@ class AdminController extends Controller {
 
             $expVal = 0;
             try {
-                $db->query("SELECT SUM(amount) as total FROM expenses WHERE MONTH(date) = :m AND YEAR(date) = :y");
+                $db->query("SELECT SUM(amount) as total FROM expenses WHERE (school_id = :school_id OR school_id IS NULL) AND MONTH(date) = :m AND YEAR(date) = :y");
+                $db->bind(':school_id', $schoolId);
                 $db->bind(':m', $mNum);
                 $db->bind(':y', $yNum);
                 $expR = $db->single();
@@ -252,6 +259,21 @@ class AdminController extends Controller {
         $domain = strtolower(trim($_POST['domain'] ?? ''));
         $status = trim($_POST['status'] ?? 'active');
 
+        // Auto-generate branch code from branch name if left empty
+        if ($code === '' && $name !== '') {
+            $baseCode = strtolower(preg_replace('/[^a-z0-9_-]/', '-', strtolower($name)));
+            $baseCode = trim(preg_replace('/-+/', '-', $baseCode), '-');
+            if (strlen($baseCode) < 2) {
+                $baseCode = 'branch-' . substr(md5($name), 0, 4);
+            }
+            $code = $baseCode;
+            $counter = 1;
+            while ($schoolModel->existsByCode($code)) {
+                $counter++;
+                $code = $baseCode . '-' . $counter;
+            }
+        }
+
         $data = [
             'schools' => $schoolModel->getAllSchools(),
             'form' => [
@@ -268,7 +290,7 @@ class AdminController extends Controller {
         ];
 
         if ($name === '') {
-            $data['errors']['name'] = 'School name is required.';
+            $data['errors']['name'] = 'School / Branch name is required.';
         }
 
         if ($code === '' || !preg_match('/^[a-z0-9_-]{2,50}$/', $code)) {
@@ -301,8 +323,56 @@ class AdminController extends Controller {
             'plan_id' => null
         ]);
 
+        $_SESSION['flash_success'] = "New branch '{$name}' successfully created! Direct Branch URL: " . URLROOT . "/?branch={$code}";
+
         header('Location: ' . URLROOT . '/admin/schools');
         exit;
+    }
+
+    public function switchSchool($id = null){
+        $this->requireSuperAdmin();
+        $id = (int)$id;
+        if ($id <= 0) {
+            header('Location: ' . URLROOT . '/admin/schools');
+            exit;
+        }
+
+        $schoolModel = $this->model('School');
+        $school = $schoolModel->findById($id);
+
+        if (!$school) {
+            $_SESSION['flash_error'] = 'School / Branch not found.';
+            header('Location: ' . URLROOT . '/admin/schools');
+            exit;
+        }
+
+        if ($school->status !== 'active') {
+            $_SESSION['flash_error'] = "Cannot switch to '{$school->name}' because its status is '{$school->status}'. Please activate it first.";
+            header('Location: ' . URLROOT . '/admin/schools');
+            exit;
+        }
+
+        TenantContext::setSchoolId($school->id, $school->code);
+        $_SESSION['school_id'] = (int)$school->id;
+        $_SESSION['school_code'] = $school->code;
+        $_SESSION['school_name'] = $school->name;
+        if (isset($_SESSION['user_id'])) {
+            $_SESSION['user_school_id'] = (int)$school->id;
+        }
+
+        if (class_exists('SiteSetting')) {
+            SiteSetting::clearCache();
+        }
+
+        $_SESSION['flash_success'] = "Switched active branch to: '{$school->name}' (#{$school->id} / {$school->code}). All operational data (students, fees, classes, staff) is now filtered for this campus.";
+        
+        $referer = $_SERVER['HTTP_REFERER'] ?? (URLROOT . '/admin/schools');
+        header('Location: ' . $referer);
+        exit;
+    }
+
+    public function switchBranch($id = null){
+        $this->switchSchool($id);
     }
 
     public function schoolStatus($id = null, $status = null){
@@ -329,7 +399,11 @@ class AdminController extends Controller {
     }
 
     public function deleteSchool($id = null){
-        $this->requireSuperAdmin();
+        if (($_SESSION['user_role'] ?? '') !== 'super_admin') {
+            $_SESSION['flash_error'] = 'Access Denied: Only Super Administrator can permanently delete a branch.';
+            header('Location: ' . URLROOT . '/admin/schools');
+            exit;
+        }
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('Location: ' . URLROOT . '/admin/schools');
@@ -579,17 +653,18 @@ class AdminController extends Controller {
     }
 
     private function requireSuperAdmin(){
-        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'super_admin') {
+        $role = $_SESSION['user_role'] ?? '';
+        if (!in_array($role, ['super_admin', 'admin'], true)) {
             $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
                    || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false);
             if ($isAjax) {
                 if (ob_get_length()) ob_clean();
                 http_response_code(403);
                 header('Content-Type: application/json; charset=utf-8');
-                echo json_encode(['success' => false, 'message' => 'Access Denied: Super administrator privileges are required.', 'error' => 'forbidden']);
+                echo json_encode(['success' => false, 'message' => 'Access Denied: Only Administrator and Super Administrator are authorized to manage or switch branches.', 'error' => 'forbidden']);
                 exit;
             }
-            $_SESSION['flash_error'] = 'Access Denied: Super administrator privileges are required.';
+            $_SESSION['flash_error'] = 'Access Denied: Only Administrator and Super Administrator are authorized to manage or switch branches.';
             header('Location: ' . URLROOT . '/admin/dashboard');
             exit;
         }

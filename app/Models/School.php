@@ -64,6 +64,10 @@ class School {
         return $this->db->single();
     }
 
+    public function getSchoolById($id){
+        return $this->findById($id);
+    }
+
     public function deleteSchool($id){
         $id = (int)$id;
         if ($id <= 1) {

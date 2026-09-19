@@ -13,10 +13,11 @@ class Family {
         $schoolId = TenantContext::getSchoolId() ?: 1;
         $this->db->query("SELECT f.*, COUNT(s.id) as total_children
                           FROM families f
-                          LEFT JOIN students s ON (s.family_id = f.family_code OR s.father_cnic = f.father_cnic) AND s.school_id = :school_id
+                          LEFT JOIN students s ON (s.family_id = f.family_code OR s.father_cnic = f.father_cnic) AND s.school_id = :school_id_join
                           WHERE f.school_id = :school_id
                           GROUP BY f.id, f.family_code, f.father_name, f.father_cnic, f.guardian_phone, f.default_discount_percent, f.notes, f.created_at
                           ORDER BY f.id DESC");
+        $this->db->bind(':school_id_join', $schoolId);
         $this->db->bind(':school_id', $schoolId);
         return $this->db->resultSet();
     }
@@ -151,10 +152,11 @@ class Family {
 
             $this->db->query("UPDATE students 
                               SET family_id = :code, sibling_discount_percent = :disc, 
-                                  concession_type = CASE WHEN :disc > 0 THEN 'Sibling Discount' ELSE concession_type END 
+                                  concession_type = CASE WHEN :disc_cond > 0 THEN 'Sibling Discount' ELSE concession_type END 
                               WHERE id = :id AND school_id = :school_id");
             $this->db->bind(':code', trim($family_code));
             $this->db->bind(':disc', $discount);
+            $this->db->bind(':disc_cond', $discount);
             $this->db->bind(':id', $child->id);
             $this->db->bind(':school_id', $schoolId);
             $this->db->execute();

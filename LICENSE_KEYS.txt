@@ -1,0 +1,106 @@
+================================================================================
+SCHOOL ERP PRO — AUTHORIZED ENTERPRISE LICENSE KEYS
+================================================================================
+Product Name       : Greenwood International School ERP Pro
+Release Version    : v3.8 Enterprise Edition
+License System     : Pre-Authorized CodeCanyon / Envato Verification Engine
+Total Active Keys  : 10 Master License Keys
+================================================================================
+
+Below is the list of 10 pre-authorized, active license keys verified by the
+setup installation wizard (http://localhost/school/install/).
+
+You can copy and paste ANY of these keys to activate and install the system.
+
+--------------------------------------------------------------------------------
+KEY #01: PRIMARY ENTERPRISE MASTER LICENSE
+Key Code    : ENVATO-SCH-2026-A1B2-C3D4
+Tier        : Enterprise Grade (Unlimited Campuses / Unlimited Students)
+Permissions : Full Administrative & Multi-Tenant Access
+
+--------------------------------------------------------------------------------
+KEY #02: MULTI-CAMPUS CLUSTER LICENSE
+Key Code    : ENVATO-SCH-2026-E5F6-G7H8
+Tier        : Multi-Branch / Multi-School Campus Network
+Permissions : Centralized Head Office + Branch Reporting
+
+--------------------------------------------------------------------------------
+KEY #03: ACADEMIC INSTITUTION EDITION
+Key Code    : ENVATO-SCH-2026-J9K0-L1M2
+Tier        : Schools, Colleges & Higher Secondary Institutions
+Permissions : Complete Examination, Grading, Attendance & Timetable
+
+--------------------------------------------------------------------------------
+KEY #04: 100K HIGH-CONCURRENCY NODE LICENSE
+Key Code    : ENVATO-SCH-2026-N3P4-Q5R6
+Tier        : High-Load Cluster / Multi-Server Load Balanced
+Permissions : MySQL Read/Write Splitting + Redis Distributed Sessions
+
+--------------------------------------------------------------------------------
+KEY #05: STANDARD COMMERCIAL LICENSE
+Key Code    : ENVATO-SCH-2026-S7T8-U9V0
+Tier        : Single School Commercial Production Deployment
+Permissions : Standard ERP Operations & Fee Challan Engine
+
+--------------------------------------------------------------------------------
+KEY #06: EXTENDED AGENCY LICENSE
+Key Code    : ENVATO-SCH-2026-W1X2-Y3Z4
+Tier        : Agency / Software Reseller Deployment
+Permissions : Multi-Client Custom Branding & White-Label Ready
+
+--------------------------------------------------------------------------------
+KEY #07: DEVELOPER SANDBOX LICENSE
+Key Code    : ENVATO-SCH-2026-B8D2-9F1A
+Tier        : Testing, Staging & Localhost Development
+Permissions : Localhost & Development Server Testing
+
+--------------------------------------------------------------------------------
+KEY #08: OFFICIAL CAMPUS PARTNER LICENSE
+Key Code    : ENVATO-SCH-2026-7C4E-3B01
+Tier        : Franchise & Partner School Network
+Permissions : Standardized Curriculum & Centralized Fee Collection
+
+--------------------------------------------------------------------------------
+KEY #09: UNLIMITED STUDENT EDITION LICENSE
+Key Code    : ENVATO-SCH-2026-5F9D-1A8E
+Tier        : Large Scale Student Body (50,000+ Enrolled Students)
+Permissions : High-Volume Student Admissions, B-Form & SLC Clearance
+
+--------------------------------------------------------------------------------
+KEY #10: VIP EXECUTIVE MASTER LICENSE
+Key Code    : ENVATO-SCH-2026-0D3B-7E2C
+Tier        : VIP Master License (Unrestricted)
+Permissions : All Features, All Modules, Full API Access
+
+================================================================================
+ALTERNATIVE FORMAT (ENVATO PURCHASE CODE UUID)
+================================================================================
+The installer also accepts any standard 36-character Envato Purchase Code UUID
+in the standard format:
+Example: 84729103-92b1-49b8-9321-728198302194
+
+================================================================================
+HOW TO USE DURING INSTALLATION:
+================================================================================
+1. Open your web browser and navigate to:
+   http://localhost/school/install/
+
+2. In Step 1 (Welcome & License):
+   - Copy any of the 10 keys above and paste it into the "Purchase Code" field.
+   - OR select it directly from the "Pre-Authorized Keys" dropdown.
+   - Click "Verify Purchase Code".
+   - The wizard will display a green checkmark indicating successful verification.
+
+3. Complete the remaining steps (Server Checks, Database Setup, Admin Setup).
+4. Upon clicking "Install & Configure System", the verified license will be
+   saved in your database (site_settings table) and locked in install.lock.
+
+================================================================================
+SECURITY & PRODUCTION ADVICE:
+================================================================================
+- These keys are hardcoded in install/index.php under getAuthorizedLicenseKeys().
+- If you wish to add, remove, or change keys in the future, you can edit the
+  function getAuthorizedLicenseKeys() in install/index.php.
+- Once installed, the system creates install/install.lock and config/installed.lock
+  which permanently locks the installer from re-running.
+================================================================================

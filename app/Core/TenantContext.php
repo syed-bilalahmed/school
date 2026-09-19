@@ -9,11 +9,40 @@ class TenantContext {
      * Resolves and sets the current school context based on session or request
      */
     public static function resolve() {
+        $loggedInRole = $_SESSION['user_role'] ?? null;
+        $isLoggedIn = !empty($_SESSION['user_id']);
+        $canSwitchBranch = !$isLoggedIn || in_array($loggedInRole, ['super_admin', 'admin'], true);
+
+        // Security Lock: If a non-admin user is logged in (teacher, student, parent, staff), strictly lock to their school_id
+        if ($isLoggedIn && !$canSwitchBranch && !empty($_SESSION['user_school_id'])) {
+            self::setSchoolId((int)$_SESSION['user_school_id']);
+            return;
+        }
+
+        // 1. Direct branch switch via query string (?branch=code_or_id or ?school=code_or_id) - only for public or admin/super_admin
+        $branchQuery = !empty($_GET['branch']) ? trim($_GET['branch']) : (!empty($_GET['school']) ? trim($_GET['school']) : null);
+        if ($branchQuery && $canSwitchBranch) {
+            $matchedSchool = is_numeric($branchQuery) ? self::findSchoolById((int)$branchQuery) : self::findSchoolByCode(strtolower($branchQuery));
+            if ($matchedSchool && $matchedSchool->status === 'active') {
+                self::setSchool($matchedSchool->id, $matchedSchool->code);
+                if (!empty($matchedSchool->name)) {
+                    $_SESSION['school_name'] = $matchedSchool->name;
+                }
+                return;
+            }
+        }
+
         if (isset($_SESSION['school_id']) && (int)$_SESSION['school_id'] > 0) {
             self::$schoolId = (int)$_SESSION['school_id'];
             self::$schoolCode = $_SESSION['school_code'] ?? self::fetchSchoolCodeById(self::$schoolId);
             if (self::$schoolCode) {
                 $_SESSION['school_code'] = self::$schoolCode;
+            }
+            if (empty($_SESSION['school_name'])) {
+                $sch = self::findSchoolById(self::$schoolId);
+                if ($sch && !empty($sch->name)) {
+                    $_SESSION['school_name'] = $sch->name;
+                }
             }
             return;
         }
@@ -29,6 +58,9 @@ class TenantContext {
             $school = self::findSchoolByCode($codeFromPath);
             if ($school) {
                 self::setSchool($school->id, $school->code);
+                if (!empty($school->name)) {
+                    $_SESSION['school_name'] = $school->name;
+                }
                 return;
             }
         }
@@ -38,6 +70,9 @@ class TenantContext {
             $school = self::findSchoolByDomain($domain);
             if ($school) {
                 self::setSchool($school->id, $school->code);
+                if (!empty($school->name)) {
+                    $_SESSION['school_name'] = $school->name;
+                }
                 return;
             }
         }
@@ -128,10 +163,21 @@ class TenantContext {
         return preg_replace('/:\\d+$/', '', $host);
     }
 
+    public static function findSchoolById($id) {
+        try {
+            $db = new Database();
+            $db->query("SELECT id, code, name, status FROM schools WHERE id = :id LIMIT 1");
+            $db->bind(':id', (int)$id);
+            return $db->single();
+        } catch (PDOException $e) {
+            return null;
+        }
+    }
+
     private static function findSchoolByCode($code) {
         try {
             $db = new Database();
-            $db->query("SELECT id, code FROM schools WHERE code = :code AND status = 'active' LIMIT 1");
+            $db->query("SELECT id, code, name, status FROM schools WHERE code = :code AND status = 'active' LIMIT 1");
             $db->bind(':code', $code);
             return $db->single();
         } catch (PDOException $e) {
@@ -142,7 +188,7 @@ class TenantContext {
     private static function findSchoolByDomain($domain) {
         try {
             $db = new Database();
-            $db->query("SELECT id, code FROM schools WHERE domain = :domain AND status = 'active' LIMIT 1");
+            $db->query("SELECT id, code, name, status FROM schools WHERE domain = :domain AND status = 'active' LIMIT 1");
             $db->bind(':domain', $domain);
             return $db->single();
         } catch (PDOException $e) {

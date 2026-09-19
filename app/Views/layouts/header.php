@@ -103,6 +103,19 @@ if (!empty($_SERVER['HTTP_X_PJAX'])) {
                     <span>Session:</span>
                     <strong><?php echo htmlspecialchars($activeSessionName); ?></strong>
                 </a>
+                <?php if(in_array($userRole, ['admin', 'super_admin'])): ?>
+                    <a href="<?php echo URLROOT; ?>/admin/schools" class="session-badge-pill text-decoration-none d-none d-lg-inline-flex align-items-center gap-1 ms-2" title="Active Campus / Branch (Click to manage or switch branch)">
+                        <i class="fa fa-code-branch text-success"></i>
+                        <span>Branch:</span>
+                        <strong><?php echo htmlspecialchars($_SESSION['school_name'] ?? (TenantContext::getSchoolCode() !== 'default' ? TenantContext::getSchoolCode() : 'Main Campus')); ?></strong>
+                    </a>
+                <?php else: ?>
+                    <span class="session-badge-pill d-none d-lg-inline-flex align-items-center gap-1 ms-2" title="Active Campus / Branch">
+                        <i class="fa fa-code-branch text-success"></i>
+                        <span>Branch:</span>
+                        <strong><?php echo htmlspecialchars($_SESSION['school_name'] ?? (TenantContext::getSchoolCode() !== 'default' ? TenantContext::getSchoolCode() : 'Main Campus')); ?></strong>
+                    </span>
+                <?php endif; ?>
             </div>
             <div class="d-flex align-items-center gap-2 gap-md-3">
                 <a href="<?php echo $headerRoleHomeUrl; ?>" class="nav-icon-btn d-none d-md-inline-flex" title="Dashboard">

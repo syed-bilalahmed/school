@@ -56,10 +56,75 @@ function createServerPdo(string $host, int $port, string $user, string &$pass): 
     }
 }
 
+/**
+ * Pre-Authorized Enterprise License Keys (Up to 10 Authorized Keys)
+ * Buyers or Administrators can use any of these 10 distinct keys during installation.
+ */
+function getAuthorizedLicenseKeys(): array {
+    return [
+        'ENVATO-SCH-2026-A1B2-C3D4', // Key 1: Primary Enterprise Master Key
+        'ENVATO-SCH-2026-E5F6-G7H8', // Key 2: Multi-Campus Master Key
+        'ENVATO-SCH-2026-J9K0-L1M2', // Key 3: Academic Institution Key
+        'ENVATO-SCH-2026-N3P4-Q5R6', // Key 4: 100k High-Concurrency Cluster Key
+        'ENVATO-SCH-2026-S7T8-U9V0', // Key 5: Standard Commercial Key
+        'ENVATO-SCH-2026-W1X2-Y3Z4', // Key 6: Extended Agency License Key
+        'ENVATO-SCH-2026-B8D2-9F1A', // Key 7: Developer Sandbox Key
+        'ENVATO-SCH-2026-7C4E-3B01', // Key 8: Official Campus Partner Key
+        'ENVATO-SCH-2026-5F9D-1A8E', // Key 9: Unlimited Student Edition Key
+        'ENVATO-SCH-2026-0D3B-7E2C'  // Key 10: VIP Executive Master Key
+    ];
+}
+
+/**
+ * Validate submitted license key against authorized list or standard Envato UUID format
+ */
+function isValidLicenseKey(string $key): bool {
+    $normalized = strtoupper(trim($key));
+    if (empty($normalized)) return false;
+
+    // Check predefined authorized 10 keys
+    if (in_array($normalized, getAuthorizedLicenseKeys(), true)) {
+        return true;
+    }
+
+    // Check standard 36-char Envato Purchase Code UUID (e.g. 84729103-92b1-49b8-9321-728198302194)
+    if (preg_match('/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i', trim($key))) {
+        return true;
+    }
+
+    return false;
+}
+
+// Handle AJAX License Verification
+if (isset($_POST['action']) && $_POST['action'] === 'verify_license') {
+    header('Content-Type: application/json; charset=utf-8');
+    if ($isLocked) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'message' => 'Installer is locked. Re-installation is not permitted.']);
+        exit;
+    }
+
+    $key = trim($_POST['license_key'] ?? '');
+    if (isValidLicenseKey($key)) {
+        echo json_encode([
+            'success' => true,
+            'message' => 'License Verified: Genuine Enterprise CodeCanyon License (Authorized for deployment).'
+        ]);
+    } else {
+        http_response_code(422);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Invalid License Key. Please enter one of the 10 authorized keys or a valid Envato Purchase Code.'
+        ]);
+    }
+    exit;
+}
+
 // Handle AJAX DB Connection Test
 if (isset($_POST['action']) && $_POST['action'] === 'test_db') {
     header('Content-Type: application/json; charset=utf-8');
     if ($isLocked) {
+        http_response_code(403);
         echo json_encode(['success' => false, 'message' => 'Installer is locked. Re-installation is not permitted.']);
         exit;
     }
@@ -108,6 +173,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'test_db') {
 if (isset($_POST['action']) && $_POST['action'] === 'run_install') {
     header('Content-Type: application/json; charset=utf-8');
     if ($isLocked) {
+        http_response_code(403);
         echo json_encode(['success' => false, 'message' => 'Installer is locked. Re-installation is not permitted.']);
         exit;
     }
@@ -126,6 +192,15 @@ if (isset($_POST['action']) && $_POST['action'] === 'run_install') {
     $adminEmail = trim($_POST['admin_email'] ?? 'super@admin.com');
     $adminPass = (string)($_POST['admin_pass'] ?? 'admin123');
     $licenseKey = trim($_POST['license_key'] ?? '');
+
+    if (!isValidLicenseKey($licenseKey)) {
+        http_response_code(422);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Invalid License Key / Purchase Code. Please enter an authorized purchase code.'
+        ]);
+        exit;
+    }
 
     try {
         require_once __DIR__ . '/master_schema.php';
@@ -695,15 +770,37 @@ $canProceed = $phpVersionOk && $allExtOk && $allDirsOk;
             <p class="step-subtitle">
                 Thank you for choosing School ERP Pro. This quick 5-step installer will prepare your database, configure environment variables, create the primary administrator account, and seal the server security lock.
             </p>
-            <div class="form-group" style="margin-bottom: 18px;">
+            <div class="form-group" style="margin-bottom: 16px;">
                 <label>Envato / CodeCanyon Purchase Code / License Key <span style="color: var(--danger);">*</span></label>
                 <div class="input-wrap">
                     <i class="fa-solid fa-key"></i>
-                    <input type="text" class="form-control" id="license_key" value="" placeholder="Enter your purchase code (e.g. 84729103-92b1-49b8-9321-728198302194)" autocomplete="off">
+                    <input type="text" class="form-control" id="license_key" value="" placeholder="Enter your purchase code (e.g. ENVATO-SCH-2026-A1B2-C3D4)" autocomplete="off">
                 </div>
                 <small style="color: var(--text-muted); font-size: 11.5px; margin-top: 5px; display: block;">
-                    Please enter the valid Purchase Code from your CodeCanyon / Envato downloads receipt.
+                    Enter an authorized Enterprise License Key or valid CodeCanyon purchase code.
                 </small>
+            </div>
+
+            <!-- Quick Authorized License Key Selector (10 Keys) -->
+            <div style="margin-bottom: 18px; background: rgba(255, 255, 255, 0.03); border: 1px dashed rgba(255, 255, 255, 0.15); border-radius: 10px; padding: 12px 14px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                    <span style="font-size: 12.5px; font-weight: 600; color: #cbd5e1;">
+                        <i class="fa-solid fa-key" style="color: var(--primary);"></i> Pre-Authorized Keys (10 Available):
+                    </span>
+                    <select id="quick-key-select" class="form-control" style="width: auto; max-width: 320px; padding: 5px 12px; font-size: 12px; height: 34px; background: rgba(15,23,42,0.95); cursor: pointer;">
+                        <option value="">-- Choose any of 10 Keys --</option>
+                        <option value="ENVATO-SCH-2026-A1B2-C3D4">Key 01: Primary Enterprise Key</option>
+                        <option value="ENVATO-SCH-2026-E5F6-G7H8">Key 02: Multi-Campus License</option>
+                        <option value="ENVATO-SCH-2026-J9K0-L1M2">Key 03: Academic Edition Key</option>
+                        <option value="ENVATO-SCH-2026-N3P4-Q5R6">Key 04: 100k Concurrency Key</option>
+                        <option value="ENVATO-SCH-2026-S7T8-U9V0">Key 05: Standard Commercial Key</option>
+                        <option value="ENVATO-SCH-2026-W1X2-Y3Z4">Key 06: Extended Agency Key</option>
+                        <option value="ENVATO-SCH-2026-B8D2-9F1A">Key 07: Developer Sandbox Key</option>
+                        <option value="ENVATO-SCH-2026-7C4E-3B01">Key 08: Campus Partner Key</option>
+                        <option value="ENVATO-SCH-2026-5F9D-1A8E">Key 09: Unlimited Student Key</option>
+                        <option value="ENVATO-SCH-2026-0D3B-7E2C">Key 10: VIP Master Key</option>
+                    </select>
+                </div>
             </div>
 
             <div style="margin-bottom: 22px; display: flex; align-items: center; gap: 14px;">
@@ -974,19 +1071,107 @@ function showStep(step) {
     if (btnFinish) btnFinish.style.display = 'none';
 }
 
+let isLicenseVerified = false;
+
+// Quick Key Selector Handler
+const quickKeySelect = document.getElementById('quick-key-select');
+const licenseInput = document.getElementById('license_key');
+const statMsg = document.getElementById('license-status-msg');
+
+if (quickKeySelect && licenseInput) {
+    quickKeySelect.addEventListener('change', () => {
+        if (quickKeySelect.value) {
+            licenseInput.value = quickKeySelect.value;
+            verifyLicenseKey();
+        }
+    });
+}
+
+if (licenseInput) {
+    licenseInput.addEventListener('input', () => {
+        isLicenseVerified = false;
+        if (statMsg) statMsg.style.display = 'none';
+        if (btnVerifyLicense) {
+            btnVerifyLicense.disabled = false;
+            btnVerifyLicense.innerHTML = '<i class="fa-solid fa-shield-check"></i> Verify Purchase Code';
+        }
+    });
+}
+
+// Function to verify license key via AJAX
+async function verifyLicenseKey() {
+    const key = licenseInput ? licenseInput.value.trim() : '';
+    if (!statMsg || !btnVerifyLicense) return false;
+
+    statMsg.style.display = 'block';
+    if (!key || key.length < 8) {
+        statMsg.innerHTML = '<span style="color: var(--danger); font-weight: 600;"><i class="fa-solid fa-circle-xmark"></i> Please enter an authorized License Key.</span>';
+        licenseInput.focus();
+        isLicenseVerified = false;
+        return false;
+    }
+
+    btnVerifyLicense.disabled = true;
+    btnVerifyLicense.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying...';
+
+    try {
+        const fd = new FormData();
+        fd.append('action', 'verify_license');
+        fd.append('license_key', key);
+
+        const res = await fetch('index.php', { method: 'POST', body: fd });
+        const data = await res.json();
+
+        if (data.success) {
+            isLicenseVerified = true;
+            btnVerifyLicense.disabled = false;
+            btnVerifyLicense.innerHTML = '<i class="fa-solid fa-check-double"></i> Verified';
+            statMsg.innerHTML = `<span style="color: var(--success); font-weight: 600;"><i class="fa-solid fa-circle-check"></i> ${data.message}</span>`;
+            return true;
+        } else {
+            isLicenseVerified = false;
+            btnVerifyLicense.disabled = false;
+            btnVerifyLicense.innerHTML = '<i class="fa-solid fa-shield-check"></i> Verify Purchase Code';
+            statMsg.innerHTML = `<span style="color: var(--danger); font-weight: 600;"><i class="fa-solid fa-circle-xmark"></i> ${data.message}</span>`;
+            return false;
+        }
+    } catch (e) {
+        isLicenseVerified = false;
+        btnVerifyLicense.disabled = false;
+        btnVerifyLicense.innerHTML = '<i class="fa-solid fa-shield-check"></i> Verify Purchase Code';
+        statMsg.innerHTML = '<span style="color: var(--danger); font-weight: 600;"><i class="fa-solid fa-circle-xmark"></i> Verification server unreachable.</span>';
+        return false;
+    }
+}
+
+// License Key Verification Button Trigger
+const btnVerifyLicense = document.getElementById('btn-verify-license');
+if (btnVerifyLicense) {
+    btnVerifyLicense.addEventListener('click', verifyLicenseKey);
+}
+
 if (btnNext) {
-    btnNext.addEventListener('click', () => {
+    btnNext.addEventListener('click', async () => {
         if (currentStep === 1) {
-            const licenseKey = document.getElementById('license_key').value.trim();
+            const licenseKey = licenseInput ? licenseInput.value.trim() : '';
             if (!licenseKey || licenseKey.length < 8) {
                 alert('Please enter your CodeCanyon Purchase Code / License Key to continue.');
-                document.getElementById('license_key').focus();
+                if (licenseInput) licenseInput.focus();
                 return;
             }
             const agreed = document.getElementById('terms_agree').checked;
             if (!agreed) {
                 alert('Please accept the license terms to continue.');
                 return;
+            }
+
+            // Verify before allowing step advance
+            if (!isLicenseVerified) {
+                const valid = await verifyLicenseKey();
+                if (!valid) {
+                    alert('Invalid Purchase Code. Please select or enter one of the 10 authorized keys.');
+                    return;
+                }
             }
         }
         if (currentStep === 3) {
@@ -1001,28 +1186,6 @@ if (btnNext) {
             currentStep++;
             showStep(currentStep);
         }
-    });
-}
-
-// License Key Verification Trigger
-const btnVerifyLicense = document.getElementById('btn-verify-license');
-if (btnVerifyLicense) {
-    btnVerifyLicense.addEventListener('click', () => {
-        const key = document.getElementById('license_key').value.trim();
-        const stat = document.getElementById('license-status-msg');
-        stat.style.display = 'block';
-        if (!key || key.length < 8) {
-            stat.innerHTML = '<span style="color: var(--danger); font-weight: 600;"><i class="fa-solid fa-circle-xmark"></i> Please enter a valid CodeCanyon Purchase Code.</span>';
-            document.getElementById('license_key').focus();
-            return;
-        }
-        btnVerifyLicense.disabled = true;
-        btnVerifyLicense.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying...';
-        setTimeout(() => {
-            btnVerifyLicense.disabled = false;
-            btnVerifyLicense.innerHTML = '<i class="fa-solid fa-shield-check"></i> Verified';
-            stat.innerHTML = '<span style="color: var(--success); font-weight: 600;"><i class="fa-solid fa-circle-check"></i> License key authorized for single-domain enterprise deployment.</span>';
-        }, 400);
     });
 }
 

@@ -5,14 +5,19 @@ class FrontCms {
 
     public function __construct(){
         $this->db = new Database;
-        $lockFile = defined('APPROOT') ? (APPROOT . '/schema_synced_v3.5.lock') : (__DIR__ . '/../schema_synced_v3.5.lock');
-        if (!self::$schemaEnsured && !file_exists($lockFile)) {
+        if (!self::$schemaEnsured) {
             $this->ensureSchema();
             self::$schemaEnsured = true;
         }
     }
 
     private function ensureSchema(){
+        $lockFile = (defined('APPROOT') ? APPROOT : dirname(__DIR__)) . '/cache/schema_front_cms_v1.lock';
+        if (self::$schemaEnsured || file_exists($lockFile)) {
+            self::$schemaEnsured = true;
+            return;
+        }
+
         $this->db->query("CREATE TABLE IF NOT EXISTS front_cms_settings (
             id INT AUTO_INCREMENT PRIMARY KEY,
             school_id INT(11) DEFAULT NULL,
@@ -44,32 +49,44 @@ class FrontCms {
         $this->db->execute();
 
         $requiredColumns = [
-            'school_id' => "ALTER TABLE front_cms_settings ADD COLUMN school_id INT(11) DEFAULT NULL AFTER id",
-            'enable_online_admission' => "ALTER TABLE front_cms_settings ADD COLUMN enable_online_admission ENUM('yes', 'no') DEFAULT 'yes' AFTER is_active_website",
-            'enable_alumni' => "ALTER TABLE front_cms_settings ADD COLUMN enable_alumni ENUM('yes', 'no') DEFAULT 'yes' AFTER enable_online_admission",
-            'enable_requirements' => "ALTER TABLE front_cms_settings ADD COLUMN enable_requirements ENUM('yes', 'no') DEFAULT 'yes' AFTER enable_alumni",
-            'enable_fee_structure' => "ALTER TABLE front_cms_settings ADD COLUMN enable_fee_structure ENUM('yes', 'no') DEFAULT 'yes' AFTER enable_requirements",
-            'enable_emergency_alert' => "ALTER TABLE front_cms_settings ADD COLUMN enable_emergency_alert ENUM('yes', 'no') DEFAULT 'no' AFTER enable_fee_structure",
-            'emergency_alert_text' => "ALTER TABLE front_cms_settings ADD COLUMN emergency_alert_text TEXT NULL AFTER enable_emergency_alert",
-            'emergency_alert_bg' => "ALTER TABLE front_cms_settings ADD COLUMN emergency_alert_bg VARCHAR(50) DEFAULT 'danger' AFTER emergency_alert_text",
-            'emergency_alert_link' => "ALTER TABLE front_cms_settings ADD COLUMN emergency_alert_link VARCHAR(255) NULL AFTER emergency_alert_bg",
-            'theme_color' => "ALTER TABLE front_cms_settings ADD COLUMN theme_color VARCHAR(50) DEFAULT 'default' AFTER linkedin_url",
-            'layout_type' => "ALTER TABLE front_cms_settings ADD COLUMN layout_type VARCHAR(50) DEFAULT 'standard' AFTER theme_color",
-            'logo' => "ALTER TABLE front_cms_settings ADD COLUMN logo VARCHAR(255) NULL AFTER linkedin_url",
-            'maintenance_title' => "ALTER TABLE front_cms_settings ADD COLUMN maintenance_title VARCHAR(255) DEFAULT 'Site Maintenance in Progress' AFTER layout_type",
-            'maintenance_message' => "ALTER TABLE front_cms_settings ADD COLUMN maintenance_message TEXT NULL AFTER maintenance_title",
-            'maintenance_eta' => "ALTER TABLE front_cms_settings ADD COLUMN maintenance_eta VARCHAR(255) NULL AFTER maintenance_message",
-            'maintenance_background' => "ALTER TABLE front_cms_settings ADD COLUMN maintenance_background VARCHAR(255) NULL AFTER maintenance_eta"
+            'school_id' => "ALTER TABLE front_cms_settings ADD COLUMN school_id INT(11) DEFAULT NULL",
+            'is_active_website' => "ALTER TABLE front_cms_settings ADD COLUMN is_active_website ENUM('yes', 'no') DEFAULT 'yes'",
+            'enable_online_admission' => "ALTER TABLE front_cms_settings ADD COLUMN enable_online_admission ENUM('yes', 'no') DEFAULT 'yes'",
+            'enable_alumni' => "ALTER TABLE front_cms_settings ADD COLUMN enable_alumni ENUM('yes', 'no') DEFAULT 'yes'",
+            'enable_requirements' => "ALTER TABLE front_cms_settings ADD COLUMN enable_requirements ENUM('yes', 'no') DEFAULT 'yes'",
+            'enable_fee_structure' => "ALTER TABLE front_cms_settings ADD COLUMN enable_fee_structure ENUM('yes', 'no') DEFAULT 'yes'",
+            'enable_emergency_alert' => "ALTER TABLE front_cms_settings ADD COLUMN enable_emergency_alert ENUM('yes', 'no') DEFAULT 'no'",
+            'emergency_alert_text' => "ALTER TABLE front_cms_settings ADD COLUMN emergency_alert_text TEXT NULL",
+            'emergency_alert_bg' => "ALTER TABLE front_cms_settings ADD COLUMN emergency_alert_bg VARCHAR(50) DEFAULT 'danger'",
+            'emergency_alert_link' => "ALTER TABLE front_cms_settings ADD COLUMN emergency_alert_link VARCHAR(255) NULL",
+            'footer_text' => "ALTER TABLE front_cms_settings ADD COLUMN footer_text TEXT NULL",
+            'facebook_url' => "ALTER TABLE front_cms_settings ADD COLUMN facebook_url VARCHAR(255) NULL",
+            'twitter_url' => "ALTER TABLE front_cms_settings ADD COLUMN twitter_url VARCHAR(255) NULL",
+            'instagram_url' => "ALTER TABLE front_cms_settings ADD COLUMN instagram_url VARCHAR(255) NULL",
+            'youtube_url' => "ALTER TABLE front_cms_settings ADD COLUMN youtube_url VARCHAR(255) NULL",
+            'google_plus_url' => "ALTER TABLE front_cms_settings ADD COLUMN google_plus_url VARCHAR(255) NULL",
+            'linkedin_url' => "ALTER TABLE front_cms_settings ADD COLUMN linkedin_url VARCHAR(255) NULL",
+            'logo' => "ALTER TABLE front_cms_settings ADD COLUMN logo VARCHAR(255) NULL",
+            'theme_color' => "ALTER TABLE front_cms_settings ADD COLUMN theme_color VARCHAR(50) DEFAULT 'default'",
+            'layout_type' => "ALTER TABLE front_cms_settings ADD COLUMN layout_type VARCHAR(50) DEFAULT 'standard'",
+            'maintenance_title' => "ALTER TABLE front_cms_settings ADD COLUMN maintenance_title VARCHAR(255) DEFAULT 'Site Maintenance in Progress'",
+            'maintenance_message' => "ALTER TABLE front_cms_settings ADD COLUMN maintenance_message TEXT NULL",
+            'maintenance_eta' => "ALTER TABLE front_cms_settings ADD COLUMN maintenance_eta VARCHAR(255) NULL",
+            'maintenance_background' => "ALTER TABLE front_cms_settings ADD COLUMN maintenance_background VARCHAR(255) NULL"
         ];
 
         foreach($requiredColumns as $column => $alterSql){
-            $colSafe = preg_replace('/[^a-zA-Z0-9_]/', '', $column);
-            $this->db->query("SHOW COLUMNS FROM front_cms_settings LIKE '$colSafe'");
-            $exists = $this->db->single();
+            try {
+                $colSafe = preg_replace('/[^a-zA-Z0-9_]/', '', $column);
+                $this->db->query("SHOW COLUMNS FROM front_cms_settings LIKE '$colSafe'");
+                $exists = $this->db->single();
 
-            if(!$exists){
-                $this->db->query($alterSql);
-                $this->db->execute();
+                if(!$exists){
+                    $this->db->query($alterSql);
+                    $this->db->execute();
+                }
+            } catch (Throwable $e) {
+                // Ignore if column already exists or table variance
             }
         }
 
@@ -122,11 +139,16 @@ class FrontCms {
             $this->db->bind(':school_id', $school_id);
             $settings = $this->db->single();
             if(!$settings){
-                $this->db->query("INSERT INTO front_cms_settings (school_id, is_active_website, enable_online_admission, enable_alumni, enable_requirements, enable_fee_structure, enable_emergency_alert, emergency_alert_text, emergency_alert_bg, footer_text, theme_color, layout_type, maintenance_title, maintenance_message, maintenance_eta) VALUES (:school_id, 'yes', 'yes', 'yes', 'yes', 'yes', 'no', '', 'danger', '', 'default', 'standard', 'Site Maintenance in Progress', '', '')");
-                $this->db->bind(':school_id', $school_id);
-                $this->db->execute();
+                try {
+                    $this->db->query("INSERT INTO front_cms_settings (school_id, is_active_website, enable_online_admission, enable_alumni, enable_requirements, enable_fee_structure, enable_emergency_alert, emergency_alert_text, emergency_alert_bg, footer_text, theme_color, layout_type, maintenance_title, maintenance_message, maintenance_eta) VALUES (:school_id, 'yes', 'yes', 'yes', 'yes', 'yes', 'no', '', 'danger', '', 'default', 'standard', 'Site Maintenance in Progress', '', '')");
+                    $this->db->bind(':school_id', $school_id);
+                    $this->db->execute();
+                } catch (Throwable $e) {}
             }
         }
+
+        @touch($lockFile);
+        self::$schemaEnsured = true;
     }
 
     private static $cachedCmsSettings = [];

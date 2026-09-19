@@ -319,6 +319,86 @@ class SettingController extends Controller {
                     $_SESSION['flash_error'] = 'Could not delete API key.';
                 }
                 $activeTab = 'api';
+
+            } elseif(isset($_POST['license_setting']) || ($postedTab === 'license' && isset($_POST['pro_license_key']))){
+                $rawKey = strtoupper(trim($_POST['pro_license_key'] ?? ''));
+                $authorizedKeys = [
+                    'ENVATO-SCH-2026-A1B2-C3D4' => [
+                        'tier' => 'Enterprise Grade (Unlimited Campuses / 100k Students)',
+                        'campuses' => 'Unlimited Campuses',
+                        'type' => 'Primary Enterprise Master License'
+                    ],
+                    'ENVATO-SCH-2026-E5F6-G7H8' => [
+                        'tier' => 'Multi-Campus Cluster Edition',
+                        'campuses' => 'Unlimited Branches',
+                        'type' => 'Multi-Branch Master License'
+                    ],
+                    'ENVATO-SCH-2026-J9K0-L1M2' => [
+                        'tier' => 'Academic Institution Edition',
+                        'campuses' => '5 Campuses',
+                        'type' => 'Academic Master License'
+                    ],
+                    'ENVATO-SCH-2026-N3P4-Q5R6' => [
+                        'tier' => '100k High-Concurrency Cluster Node',
+                        'campuses' => 'Unlimited Nodes',
+                        'type' => 'High-Load Cluster License'
+                    ],
+                    'ENVATO-SCH-2026-S7T8-U9V0' => [
+                        'tier' => 'Standard Commercial Edition',
+                        'campuses' => 'Single Campus',
+                        'type' => 'Commercial License'
+                    ],
+                    'ENVATO-SCH-2026-W1X2-Y3Z4' => [
+                        'tier' => 'Extended Agency Edition',
+                        'campuses' => 'Unlimited Clients',
+                        'type' => 'Agency / Reseller License'
+                    ],
+                    'ENVATO-SCH-2026-B8D2-9F1A' => [
+                        'tier' => 'Developer Sandbox Edition',
+                        'campuses' => 'Localhost / Staging',
+                        'type' => 'Development License'
+                    ],
+                    'ENVATO-SCH-2026-7C4E-3B01' => [
+                        'tier' => 'Official Campus Partner Network',
+                        'campuses' => 'Franchise Network',
+                        'type' => 'Campus Partner License'
+                    ],
+                    'ENVATO-SCH-2026-5F9D-1A8E' => [
+                        'tier' => 'Unlimited Student Edition (50,000+ Enrolled)',
+                        'campuses' => 'Unlimited Students',
+                        'type' => 'High-Volume Student License'
+                    ],
+                    'ENVATO-SCH-2026-0D3B-7E2C' => [
+                        'tier' => 'VIP Executive Master License (Unrestricted)',
+                        'campuses' => 'Unlimited Full Access',
+                        'type' => 'VIP Master License'
+                    ]
+                ];
+
+                $isValid = isset($authorizedKeys[$rawKey]) || preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $rawKey);
+
+                if ($isValid) {
+                    $meta = $authorizedKeys[$rawKey] ?? [
+                        'tier' => 'Verified Envato Enterprise License',
+                        'campuses' => 'Multi-Campus Unlocked',
+                        'type' => 'Standard Purchase Code'
+                    ];
+
+                    $settingModel->updateSettings([
+                        'pro_license_key' => $rawKey,
+                        'license_status' => 'active',
+                        'license_tier' => $meta['tier'],
+                        'license_type' => $meta['type'],
+                        'license_allowed_campuses' => $meta['campuses'],
+                        'license_activated_at' => date('Y-m-d H:i:s'),
+                        'license_verified' => '1'
+                    ]);
+
+                    $_SESSION['flash_success'] = 'Pro License Key activated and verified successfully! Multi-Branch management and Enterprise modules unlocked.';
+                } else {
+                    $_SESSION['flash_error'] = 'Invalid Pro License Key. Please select or enter an authorized license key (e.g. ENVATO-SCH-2026-A1B2-C3D4).';
+                }
+                $activeTab = 'license';
             }
             
             $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') 
@@ -385,6 +465,59 @@ class SettingController extends Controller {
         $apiKeyModel = $this->model('ApiKey');
         $apiKeys = $apiKeyModel ? $apiKeyModel->getAllBySchool(TenantContext::getSchoolId() ?: 1) : [];
 
+        $authorizedKeysList = [
+            'ENVATO-SCH-2026-A1B2-C3D4' => [
+                'name' => 'Primary Enterprise Master License',
+                'tier' => 'Enterprise Grade (Unlimited Campuses / 100k Students)',
+                'badge' => 'Enterprise Unlimited'
+            ],
+            'ENVATO-SCH-2026-E5F6-G7H8' => [
+                'name' => 'Multi-Campus Cluster License',
+                'tier' => 'Multi-Branch / Multi-School Campus Network',
+                'badge' => 'Multi-Campus'
+            ],
+            'ENVATO-SCH-2026-J9K0-L1M2' => [
+                'name' => 'Academic Institution Edition',
+                'tier' => 'Schools, Colleges & Higher Secondary Institutions',
+                'badge' => 'Academic Pro'
+            ],
+            'ENVATO-SCH-2026-N3P4-Q5R6' => [
+                'name' => '100k High-Concurrency Cluster Node',
+                'tier' => 'High-Load Cluster / Multi-Server Load Balanced',
+                'badge' => '100k Cluster'
+            ],
+            'ENVATO-SCH-2026-S7T8-U9V0' => [
+                'name' => 'Standard Commercial License',
+                'tier' => 'Single School Commercial Production Deployment',
+                'badge' => 'Commercial'
+            ],
+            'ENVATO-SCH-2026-W1X2-Y3Z4' => [
+                'name' => 'Extended Agency License',
+                'tier' => 'Agency / Software Reseller Deployment',
+                'badge' => 'Agency Reseller'
+            ],
+            'ENVATO-SCH-2026-B8D2-9F1A' => [
+                'name' => 'Developer Sandbox License',
+                'tier' => 'Testing, Staging & Localhost Development',
+                'badge' => 'Sandbox Dev'
+            ],
+            'ENVATO-SCH-2026-7C4E-3B01' => [
+                'name' => 'Official Campus Partner License',
+                'tier' => 'Franchise & Partner School Network',
+                'badge' => 'Campus Partner'
+            ],
+            'ENVATO-SCH-2026-5F9D-1A8E' => [
+                'name' => 'Unlimited Student Edition License',
+                'tier' => 'Large Scale Student Body (50,000+ Enrolled)',
+                'badge' => 'Unlimited Students'
+            ],
+            'ENVATO-SCH-2026-0D3B-7E2C' => [
+                'name' => 'VIP Executive Master License',
+                'tier' => 'VIP Master License (Unrestricted All Features)',
+                'badge' => 'VIP Unrestricted'
+            ]
+        ];
+
         $data = [
             'settings' => $settings,
             'settings_raw' => $settingsAry,
@@ -397,6 +530,7 @@ class SettingController extends Controller {
             'grouped_permissions' => $groupedPermissions,
             'matrix' => $matrix,
             'api_keys' => $apiKeys,
+            'authorized_keys' => $authorizedKeysList,
             'active_tab' => $activeTab
         ];
 

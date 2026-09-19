@@ -4,6 +4,65 @@ class FrontOffice {
 
     public function __construct(){
         $this->db = new Database;
+        $this->ensureEnquiryColumns();
+    }
+
+    /**
+     * Self-healing schema guard: Guarantees assigned_to, class_id and CRM columns exist.
+     */
+    private function ensureEnquiryColumns(): void {
+        static $checked = false;
+        if ($checked) return;
+        $checked = true;
+
+        try {
+            $pdo = Database::getWritePdo();
+            $existingColumns = [];
+            $colStmt = $pdo->query("SHOW COLUMNS FROM `admission_enquiry`");
+            if ($colStmt) {
+                while ($row = $colStmt->fetch(PDO::FETCH_ASSOC)) {
+                    $existingColumns[strtolower($row['Field'])] = true;
+                }
+            }
+
+            $columnsToAdd = [
+                'assigned_to'          => "INT NULL",
+                'class_id'             => "INT NULL",
+                'next_follow_up_date'  => "DATE NULL",
+                'father_name'          => "VARCHAR(150) NULL",
+                'mother_name'          => "VARCHAR(150) NULL",
+                'dob'                  => "DATE NULL",
+                'gender'               => "VARCHAR(20) DEFAULT 'Male'",
+                'guardian_name'        => "VARCHAR(150) NULL",
+                'guardian_relation'    => "VARCHAR(100) NULL",
+                'previous_school'      => "VARCHAR(200) NULL",
+                'status'               => "VARCHAR(50) DEFAULT 'New'",
+                'discount_offered'     => "DECIMAL(10,2) DEFAULT 0.00",
+                'converted_student_id' => "INT NULL"
+            ];
+
+            foreach ($columnsToAdd as $col => $def) {
+                if (!isset($existingColumns[strtolower($col)])) {
+                    try {
+                        $pdo->exec("ALTER TABLE `admission_enquiry` ADD COLUMN `$col` $def");
+                    } catch (Throwable $e) {}
+                }
+            }
+
+            // If legacy numeric assigned or class existed, copy to new columns
+            if (isset($existingColumns['assigned'])) {
+                try {
+                    $pdo->exec("UPDATE `admission_enquiry` SET `assigned_to` = CAST(`assigned` AS UNSIGNED) WHERE (`assigned_to` IS NULL OR `assigned_to` = 0) AND `assigned` REGEXP '^[0-9]+$'");
+                } catch (Throwable $e) {}
+            }
+            if (isset($existingColumns['class'])) {
+                try {
+                    $pdo->exec("UPDATE `admission_enquiry` SET `class_id` = CAST(`class` AS UNSIGNED) WHERE (`class_id` IS NULL OR `class_id` = 0) AND `class` REGEXP '^[0-9]+$'");
+                } catch (Throwable $e) {}
+            }
+        } catch (Throwable $e) {
+            // Table may not exist yet during initial installation
+        }
     }
 
     // --- Front Office KPI Stats ---

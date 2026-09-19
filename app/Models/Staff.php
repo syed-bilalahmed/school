@@ -236,7 +236,7 @@ class Staff {
         $totalPeriodsPerWeek = 0;
         if ($staff->role == 'teacher' || $staff->employment_type == 'Visiting / Per Lecture') {
             $this->db->query("SELECT cs.id as class_subject_id, cs.periods_per_week,
-                                     c.class_name, sec.section_name, s.subject_name, s.subject_code, s.is_core
+                                     c.class_name, sec.section_name, COALESCE(s.subject_name, s.name) as subject_name, COALESCE(s.subject_code, s.code) as subject_code, s.is_core
                               FROM class_subjects cs
                               JOIN classes c ON cs.class_id = c.id
                               JOIN sections sec ON cs.section_id = sec.id

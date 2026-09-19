@@ -41,16 +41,26 @@ class User {
 
     // Login User
     public function login($email, $password){
-        if (TenantContext::isEstablished()) {
-            $this->db->query('SELECT * FROM users WHERE email = :email AND (school_id = :school_id OR role = :super_admin)');
-            $this->db->bind(':school_id', TenantContext::getSchoolId());
-            $this->db->bind(':super_admin', 'super_admin');
-        } else {
-            $this->db->query('SELECT * FROM users WHERE email = :email');
-        }
-        $this->db->bind(':email', $email);
+        $currentSchoolId = TenantContext::getSchoolId() ?: 1;
 
+        // 1. Try matching user in currently active branch context or global super_admin
+        $this->db->query('SELECT * FROM users WHERE email = :email AND (school_id = :school_id OR role = :super_admin) LIMIT 1');
+        $this->db->bind(':email', $email);
+        $this->db->bind(':school_id', $currentSchoolId);
+        $this->db->bind(':super_admin', 'super_admin');
         $row = $this->db->single();
+
+        // 2. Fallback: if not found in current branch, check if user belongs to any other active branch
+        // Allows users from any branch to log in seamlessly from the same login page
+        if (!$row) {
+            $this->db->query('SELECT u.* FROM users u 
+                              LEFT JOIN schools s ON u.school_id = s.id 
+                              WHERE u.email = :email 
+                                AND (s.status = "active" OR u.school_id IS NULL OR u.school_id = 1) 
+                              LIMIT 1');
+            $this->db->bind(':email', $email);
+            $row = $this->db->single();
+        }
         
         if($row){
             $hashed_password = $row->password;
@@ -64,7 +74,14 @@ class User {
         }
     }
 
+    private static $profileColumnsChecked = false;
+
     public function ensureUserProfileColumns() {
+        $lockFile = (defined('APPROOT') ? APPROOT : dirname(__DIR__)) . '/cache/schema_users_profile_v1.lock';
+        if (self::$profileColumnsChecked || file_exists($lockFile)) {
+            self::$profileColumnsChecked = true;
+            return;
+        }
         try {
             $this->db->query("SHOW COLUMNS FROM users LIKE 'phone'");
             if (!$this->db->single()) {
@@ -96,6 +113,9 @@ class User {
                 $this->db->execute();
             }
         } catch (Throwable $e) {}
+
+        @touch($lockFile);
+        self::$profileColumnsChecked = true;
     }
 
     public function getUserById($id){

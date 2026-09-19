@@ -6,16 +6,114 @@ class Subject {
 
     public function __construct(){
         $this->db = new Database();
+        $this->ensureSubjectColumns();
+    }
+
+    /**
+     * Self-healing schema guard: Guarantees subject_name, subject_code, and legacy name/code columns exist and stay synced.
+     */
+    private function ensureSubjectColumns(): void {
+        static $checked = false;
+        $lockFile = (defined('APPROOT') ? APPROOT : dirname(__DIR__)) . '/cache/schema_subjects_v1.lock';
+        if ($checked || file_exists($lockFile)) {
+            $checked = true;
+            return;
+        }
+        $checked = true;
+
+        try {
+            $pdo = Database::getWritePdo();
+            $existingColumns = [];
+            $colStmt = $pdo->query("SHOW COLUMNS FROM `subjects`");
+            if ($colStmt) {
+                while ($row = $colStmt->fetch(PDO::FETCH_ASSOC)) {
+                    $existingColumns[strtolower($row['Field'])] = true;
+                }
+            }
+
+            // Ensure subject_name exists
+            if (!isset($existingColumns['subject_name'])) {
+                try {
+                    $pdo->exec("ALTER TABLE `subjects` ADD COLUMN `subject_name` VARCHAR(100) NULL");
+                } catch (Throwable $e) {}
+            }
+
+            // Ensure subject_code exists
+            if (!isset($existingColumns['subject_code'])) {
+                try {
+                    $pdo->exec("ALTER TABLE `subjects` ADD COLUMN `subject_code` VARCHAR(50) NULL");
+                } catch (Throwable $e) {}
+            }
+
+            // Ensure name exists for backwards compatibility
+            if (!isset($existingColumns['name'])) {
+                try {
+                    $pdo->exec("ALTER TABLE `subjects` ADD COLUMN `name` VARCHAR(100) NULL");
+                } catch (Throwable $e) {}
+            }
+
+            // Ensure code exists for backwards compatibility
+            if (!isset($existingColumns['code'])) {
+                try {
+                    $pdo->exec("ALTER TABLE `subjects` ADD COLUMN `code` VARCHAR(50) NULL");
+                } catch (Throwable $e) {}
+            }
+
+            // Ensure is_core exists
+            if (!isset($existingColumns['is_core'])) {
+                try {
+                    $pdo->exec("ALTER TABLE `subjects` ADD COLUMN `is_core` TINYINT(1) DEFAULT 1");
+                } catch (Throwable $e) {}
+            }
+
+            // Ensure full_marks exists
+            if (!isset($existingColumns['full_marks'])) {
+                try {
+                    $pdo->exec("ALTER TABLE `subjects` ADD COLUMN `full_marks` DECIMAL(5,2) DEFAULT 100.00");
+                } catch (Throwable $e) {}
+            }
+
+            // Ensure passing_marks exists
+            if (!isset($existingColumns['passing_marks'])) {
+                try {
+                    $pdo->exec("ALTER TABLE `subjects` ADD COLUMN `passing_marks` DECIMAL(5,2) DEFAULT 33.00");
+                } catch (Throwable $e) {}
+            }
+
+            // Ensure credit_hours exists
+            if (!isset($existingColumns['credit_hours'])) {
+                try {
+                    $pdo->exec("ALTER TABLE `subjects` ADD COLUMN `credit_hours` INT DEFAULT 3");
+                } catch (Throwable $e) {}
+            }
+
+            // Synchronize data between name <-> subject_name and code <-> subject_code
+            try {
+                $pdo->exec("UPDATE `subjects` SET `subject_name` = `name` WHERE (`subject_name` IS NULL OR `subject_name` = '') AND (`name` IS NOT NULL AND `name` != '')");
+                $pdo->exec("UPDATE `subjects` SET `name` = `subject_name` WHERE (`name` IS NULL OR `name` = '') AND (`subject_name` IS NOT NULL AND `subject_name` != '')");
+                $pdo->exec("UPDATE `subjects` SET `subject_code` = `code` WHERE (`subject_code` IS NULL OR `subject_code` = '') AND (`code` IS NOT NULL AND `code` != '')");
+                $pdo->exec("UPDATE `subjects` SET `code` = `subject_code` WHERE (`code` IS NULL OR `code` = '') AND (`subject_code` IS NOT NULL AND `subject_code` != '')");
+            } catch (Throwable $e) {}
+
+            @touch($lockFile);
+        } catch (Throwable $e) {
+            // Table may not exist yet during initial installation
+            @touch($lockFile);
+        }
     }
 
     // Add a generic subject with Core/Optional, Passing Marks, Full Marks
     public function addSubject($data){
         $schoolId = TenantContext::getSchoolId() ?: 1;
-        $this->db->query("INSERT INTO subjects (school_id, subject_name, subject_code, type, is_core, full_marks, passing_marks, credit_hours) 
-                          VALUES (:school_id, :name, :code, :type, :is_core, :full_marks, :passing_marks, :credit_hours)");
+        $name = trim($data['name']);
+        $code = trim($data['code'] ?? '');
+        $this->db->query("INSERT INTO subjects (school_id, subject_name, name, subject_code, code, type, is_core, full_marks, passing_marks, credit_hours) 
+                          VALUES (:school_id, :name, :name_dup, :code, :code_dup, :type, :is_core, :full_marks, :passing_marks, :credit_hours)");
         $this->db->bind(':school_id', $schoolId);
-        $this->db->bind(':name', trim($data['name']));
-        $this->db->bind(':code', trim($data['code']));
+        $this->db->bind(':name', $name);
+        $this->db->bind(':name_dup', $name);
+        $this->db->bind(':code', $code);
+        $this->db->bind(':code_dup', $code);
         $this->db->bind(':type', !empty($data['type']) ? $data['type'] : 'Theory');
         $this->db->bind(':is_core', isset($data['is_core']) ? (int)$data['is_core'] : 1);
         $this->db->bind(':full_marks', !empty($data['full_marks']) ? (float)$data['full_marks'] : 100.00);
@@ -27,12 +125,16 @@ class Subject {
     // Update subject
     public function updateSubject($data){
         $schoolId = TenantContext::getSchoolId() ?: 1;
+        $name = trim($data['name']);
+        $code = trim($data['code'] ?? '');
         $this->db->query("UPDATE subjects 
-                          SET subject_name = :name, subject_code = :code, type = :type, 
+                          SET subject_name = :name, name = :name_dup, subject_code = :code, code = :code_dup, type = :type, 
                               is_core = :is_core, full_marks = :full_marks, passing_marks = :passing_marks, credit_hours = :credit_hours 
                           WHERE id = :id AND school_id = :school_id");
-        $this->db->bind(':name', trim($data['name']));
-        $this->db->bind(':code', trim($data['code']));
+        $this->db->bind(':name', $name);
+        $this->db->bind(':name_dup', $name);
+        $this->db->bind(':code', $code);
+        $this->db->bind(':code_dup', $code);
         $this->db->bind(':type', !empty($data['type']) ? $data['type'] : 'Theory');
         $this->db->bind(':is_core', isset($data['is_core']) ? (int)$data['is_core'] : 1);
         $this->db->bind(':full_marks', !empty($data['full_marks']) ? (float)$data['full_marks'] : 100.00);
@@ -46,7 +148,7 @@ class Subject {
     // Get single subject by ID
     public function getSubjectById($id){
         $schoolId = TenantContext::getSchoolId() ?: 1;
-        $this->db->query("SELECT * FROM subjects WHERE id = :id AND school_id = :school_id LIMIT 1");
+        $this->db->query("SELECT *, COALESCE(subject_name, name) as subject_name, COALESCE(subject_code, code) as subject_code FROM subjects WHERE id = :id AND school_id = :school_id LIMIT 1");
         $this->db->bind(':id', (int)$id);
         $this->db->bind(':school_id', $schoolId);
         return $this->db->single();
@@ -64,7 +166,7 @@ class Subject {
     // Get all generic subjects
     public function getSubjects(){
         $schoolId = TenantContext::getSchoolId() ?: 1;
-        $this->db->query("SELECT * FROM subjects WHERE school_id = :school_id ORDER BY is_core DESC, subject_name ASC");
+        $this->db->query("SELECT *, COALESCE(subject_name, name) as subject_name, COALESCE(subject_code, code) as subject_code FROM subjects WHERE school_id = :school_id ORDER BY is_core DESC, COALESCE(subject_name, name) ASC");
         $this->db->bind(':school_id', $schoolId);
         return $this->db->resultSet();
     }

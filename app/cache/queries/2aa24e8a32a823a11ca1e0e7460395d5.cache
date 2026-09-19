@@ -1,1 +1,1 @@
-a:2:{s:10:"expires_at";i:1789552487;s:4:"data";O:8:"stdClass":7:{s:2:"id";i:1;s:9:"school_id";i:1;s:12:"session_name";s:7:"2026-27";s:10:"start_date";s:10:"2026-04-01";s:8:"end_date";s:10:"2027-03-31";s:10:"is_current";i:1;s:10:"created_at";s:19:"2026-09-08 21:29:04";}}
+a:2:{s:10:"expires_at";i:1789812022;s:4:"data";O:8:"stdClass":7:{s:2:"id";i:1;s:9:"school_id";i:1;s:12:"session_name";s:7:"2026-27";s:10:"start_date";s:10:"2026-04-01";s:8:"end_date";s:10:"2027-03-31";s:10:"is_current";i:1;s:10:"created_at";s:19:"2026-09-19 01:08:41";}}

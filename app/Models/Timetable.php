@@ -10,7 +10,7 @@ class Timetable {
 
     public function getTimetable($class_id, $section_id){
         $schoolId = TenantContext::getSchoolId() ?: 1;
-        $this->db->query("SELECT ct.*, s.subject_name, s.subject_code, s.type as subject_type, st.name as staff_name 
+        $this->db->query("SELECT ct.*, COALESCE(s.subject_name, s.name) as subject_name, COALESCE(s.subject_code, s.code) as subject_code, s.type as subject_type, st.name as staff_name 
                           FROM class_timetables ct
                           JOIN subjects s ON ct.subject_id = s.id
                           LEFT JOIN users st ON ct.staff_id = st.id
@@ -38,7 +38,7 @@ class Timetable {
         $sectionId = (int)$data['section_id'];
 
         // 1. Check Section Clash (Section already has class in that time)
-        $sql = "SELECT ct.*, s.subject_name, c.class_name, sec.section_name 
+        $sql = "SELECT ct.*, COALESCE(s.subject_name, s.name) as subject_name, c.class_name, sec.section_name 
                 FROM class_timetables ct
                 JOIN subjects s ON ct.subject_id = s.id
                 JOIN classes c ON ct.class_id = c.id

@@ -41,15 +41,37 @@ class HomeController extends Controller {
             $publicNotices = [];
         }
 
+        $schoolId = class_exists('TenantContext') ? (TenantContext::getSchoolId() ?: 1) : 1;
+
+        $menus = class_exists('QueryCache') 
+            ? QueryCache::remember('front_menus_' . $schoolId, 120, function() use ($menuModel) { return $menuModel->getMenus(); })
+            : $menuModel->getMenus();
+
+        $banners = class_exists('QueryCache') 
+            ? QueryCache::remember('front_banners_' . $schoolId, 120, function() use ($bannerModel) { return $bannerModel->getBanners(); })
+            : $bannerModel->getBanners();
+
+        $news = class_exists('QueryCache') 
+            ? QueryCache::remember('front_news_' . $schoolId, 120, function() use ($newsModel) { return $newsModel->getNews(); })
+            : $newsModel->getNews();
+
+        $events = class_exists('QueryCache') 
+            ? QueryCache::remember('front_events_' . $schoolId, 120, function() use ($eventModel) { return $eventModel->getEvents(); })
+            : $eventModel->getEvents();
+
+        $gallery = class_exists('QueryCache') 
+            ? QueryCache::remember('front_gallery_' . $schoolId, 120, function() use ($galleryModel) { return $galleryModel->getGallery(); })
+            : $galleryModel->getGallery();
+
         $data = [
             'cms' => $cmsSettings,
             'school' => $siteSettings,
             'settings' => $cmsSettings,
-            'menus' => $menuModel->getMenus(),
-            'banners' => $bannerModel->getBanners(),
-            'news' => $newsModel->getNews(),
-            'events' => $eventModel->getEvents(),
-            'gallery' => $galleryModel->getGallery(),
+            'menus' => $menus,
+            'banners' => $banners,
+            'news' => $news,
+            'events' => $events,
+            'gallery' => $gallery,
             'notices' => $publicNotices
         ];
         

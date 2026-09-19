@@ -302,10 +302,51 @@
                     </div>
                 <?php endif; ?>
 
+                <?php 
+                    $loginActiveSchoolName = $_SESSION['school_name'] ?? (TenantContext::getSchoolCode() !== 'default' ? TenantContext::getSchoolCode() : ($dynamicSchoolName ?? 'Main Campus'));
+                    $availableBranches = [];
+                    try {
+                        $dbBr = new Database();
+                        $dbBr->query("SELECT id, name, code FROM schools WHERE status = 'active' ORDER BY id ASC");
+                        $availableBranches = $dbBr->resultSet() ?: [];
+                    } catch (Throwable $e) {}
+                ?>
+                <div class="d-flex align-items-center justify-content-between p-2.5 px-3 mb-3 rounded-3 border bg-light shadow-sm">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fa fa-school text-primary fs-6"></i>
+                        <div>
+                            <span class="text-muted d-block" style="font-size: 0.72rem; line-height: 1.1;">CAMPUS / BRANCH PORTAL</span>
+                            <strong class="text-dark fs-6"><?php echo htmlspecialchars($loginActiveSchoolName); ?></strong>
+                        </div>
+                    </div>
+                    <?php if(count($availableBranches) > 1): ?>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-primary py-1 px-2.5 dropdown-toggle fw-semibold" type="button" data-bs-toggle="dropdown" style="font-size: 0.75rem; border-radius: 6px;">
+                                <i class="fa fa-code-branch me-1"></i>Switch Campus
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="min-width: 220px;">
+                                <li class="dropdown-header small text-muted text-uppercase fw-bold" style="font-size:0.7rem;">Select Campus Portal</li>
+                                <?php foreach($availableBranches as $br): 
+                                    $isSel = ((isset($_SESSION['school_id']) && (int)$_SESSION['school_id'] === (int)$br->id) || TenantContext::getSchoolCode() === $br->code);
+                                ?>
+                                    <li>
+                                        <a class="dropdown-item py-2 small d-flex align-items-center justify-content-between <?php echo $isSel ? 'active fw-bold' : ''; ?>" href="<?php echo URLROOT; ?>/auth/login?branch=<?php echo htmlspecialchars($br->code); ?>">
+                                            <span><?php echo htmlspecialchars($br->name); ?></span>
+                                            <?php if($isSel): ?>
+                                                <i class="fa fa-check ms-2"></i>
+                                            <?php endif; ?>
+                                        </a>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
                 <div class="mb-3">
                     <span class="badge bg-primary bg-opacity-10 text-primary fw-bold text-uppercase px-2 py-1 mb-2" style="font-size: 0.72rem; letter-spacing: 0.05em;">Authorized Access</span>
                     <h2 class="h4 fw-bold text-dark mb-1">Sign in to your account</h2>
-                    <p class="text-muted small mb-0">Select your role below to load credentials, or enter custom credentials manually.</p>
+                    <p class="text-muted small mb-0">Sign in with your branch credentials. Administrators &amp; staff are automatically authenticated to their campus.</p>
                 </div>
 
                 <!-- 1-Click Role Credentials Selector (Strictly Excluding Super Admin) -->

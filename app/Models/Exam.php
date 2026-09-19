@@ -110,7 +110,7 @@ class Exam {
 
     public function getSchedulesByExam($exam_id, $class_id = null, $section_id = null){
         $schoolId = TenantContext::getSchoolId() ?: 1;
-        $sql = "SELECT es.*, s.subject_name, s.subject_code, c.class_name, sec.section_name,
+        $sql = "SELECT es.*, COALESCE(s.subject_name, s.name) as subject_name, COALESCE(s.subject_code, s.code) as subject_code, c.class_name, sec.section_name,
                        u_sub.name as submitter_name, u_rev.name as reviewer_name, u_app.name as approver_name
                 FROM exam_schedules es
                 JOIN subjects s ON es.subject_id = s.id
@@ -140,7 +140,7 @@ class Exam {
 
     public function getScheduleById($id){
         $schoolId = TenantContext::getSchoolId() ?: 1;
-        $this->db->query("SELECT es.*, ex.name as exam_name, ex.exam_type, s.subject_name, s.subject_code,
+        $this->db->query("SELECT es.*, ex.name as exam_name, ex.exam_type, COALESCE(s.subject_name, s.name) as subject_name, COALESCE(s.subject_code, s.code) as subject_code,
                                  c.class_name, sec.section_name, acs.session_name,
                                  sec.class_teacher_id,
                                  u_teach.name as class_teacher_name
@@ -287,7 +287,7 @@ class Exam {
     public function getApprovalChainProgress($examId = null, $classId = null, $sectionId = null){
         $schoolId = TenantContext::getSchoolId() ?: 1;
         $sql = "SELECT es.id, es.approval_status, es.exam_id, es.class_id, es.section_id,
-                       s.subject_name, s.subject_code, c.class_name, sec.section_name,
+                       COALESCE(s.subject_name, s.name) as subject_name, COALESCE(s.subject_code, s.code) as subject_code, c.class_name, sec.section_name,
                        ex.name as exam_name,
                        u_sub.name as submitter_name, es.submitted_at,
                        u_rev.name as reviewer_name, es.reviewed_at,
@@ -411,11 +411,11 @@ class Exam {
         if(!$classSec) return null;
 
         // 3. Scheduled Papers for this Exam and Class Section
-        $this->db->query("SELECT es.*, s.subject_name, s.subject_code, s.is_core
+        $this->db->query("SELECT es.*, COALESCE(s.subject_name, s.name) as subject_name, COALESCE(s.subject_code, s.code) as subject_code, s.is_core
                           FROM exam_schedules es
                           JOIN subjects s ON es.subject_id = s.id
                           WHERE es.exam_id = :eid AND es.class_id = :cid AND es.section_id = :secid AND es.school_id = :school_id
-                          ORDER BY es.date_of_exam ASC, s.subject_name ASC");
+                          ORDER BY es.date_of_exam ASC, COALESCE(s.subject_name, s.name) ASC");
         $this->db->bind(':school_id', $schoolId);
         $this->db->bind(':eid', (int)$examId);
         $this->db->bind(':cid', (int)$classId);

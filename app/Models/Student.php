@@ -417,7 +417,7 @@ class Student {
         $payments = $this->db->resultSet();
 
         // 4. Examination Results
-        $this->db->query("SELECT er.*, er.get_marks as marks_obtained, es.exam_id, es.date_of_exam, es.full_marks, es.passing_marks, e.name as exam_name, s.subject_name
+        $this->db->query("SELECT er.*, er.get_marks as marks_obtained, es.exam_id, es.date_of_exam, es.full_marks, es.passing_marks, e.name as exam_name, COALESCE(s.subject_name, s.name) as subject_name
                           FROM exam_results er
                           JOIN exam_schedules es ON er.exam_schedule_id = es.id
                           JOIN exams e ON es.exam_id = e.id

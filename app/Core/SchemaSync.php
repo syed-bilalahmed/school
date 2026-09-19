@@ -9,9 +9,18 @@ class SchemaSync {
             return;
         }
 
+        // One-time automatic performance index synchronization
+        $indexLock = (defined('APPROOT') ? APPROOT : dirname(__DIR__)) . '/cache/schema_indexes_v1.0.lock';
+        if (!file_exists($indexLock)) {
+            try {
+                self::applyPerformanceIndexes();
+                @touch($indexLock);
+            } catch (Throwable $e) {}
+        }
+
         // Performance Lock: Prevent running 80+ CREATE/SHOW queries on EVERY single request
-        $lockFile = defined('APPROOT') ? (APPROOT . '/schema_synced_v3.6.lock') : (__DIR__ . '/../schema_synced_v3.6.lock');
-        if (file_exists($lockFile) || !empty($_SESSION['schema_v3_6_synced'])) {
+        $lockFile = defined('APPROOT') ? (APPROOT . '/schema_synced_v4.0.lock') : (__DIR__ . '/../schema_synced_v4.0.lock');
+        if (file_exists($lockFile) || !empty($_SESSION['schema_v4_0_synced'])) {
             self::$synced = true;
             return;
         }
@@ -79,7 +88,28 @@ class SchemaSync {
             self::addColumnIfNotExists('front_pages', 'file_path', 'VARCHAR(255) NULL');
             self::addColumnIfNotExists('front_pages', 'file_name', 'VARCHAR(255) NULL');
             self::addColumnIfNotExists('front_pages', 'meta_description', 'VARCHAR(255) NULL');
+            self::addColumnIfNotExists('front_menus', 'title', 'VARCHAR(150) NULL');
+            self::addColumnIfNotExists('front_menus', 'menu_title', 'VARCHAR(150) NULL');
+            self::addColumnIfNotExists('front_menus', 'link', 'VARCHAR(255) NULL');
+            self::addColumnIfNotExists('front_menus', 'menu_url', 'VARCHAR(255) NULL');
+            self::addColumnIfNotExists('front_menus', 'page_id', 'INT DEFAULT 0');
             self::addColumnIfNotExists('front_menus', 'dropdown_group', "VARCHAR(50) DEFAULT 'none'");
+            try {
+                $db->query("UPDATE front_menus SET title = menu_title WHERE (title IS NULL OR title = '') AND (menu_title IS NOT NULL AND menu_title != '')");
+                $db->execute();
+            } catch (Throwable $e) {}
+            try {
+                $db->query("UPDATE front_menus SET menu_title = title WHERE (menu_title IS NULL OR menu_title = '') AND (title IS NOT NULL AND title != '')");
+                $db->execute();
+            } catch (Throwable $e) {}
+            try {
+                $db->query("UPDATE front_menus SET link = menu_url WHERE (link IS NULL OR link = '') AND (menu_url IS NOT NULL AND menu_url != '')");
+                $db->execute();
+            } catch (Throwable $e) {}
+            try {
+                $db->query("UPDATE front_menus SET menu_url = link WHERE (menu_url IS NULL OR menu_url = '') AND (link IS NOT NULL AND link != '')");
+                $db->execute();
+            } catch (Throwable $e) {}
 
             // ==========================================
             // PHASE 2: STUDENT 360, FAMILIES & INCOMES
@@ -477,10 +507,48 @@ class SchemaSync {
             )");
             $db->execute();
 
-            // 21. Enhance admission_enquiry for lead pipeline
+            // 21. Enhance admission_enquiry for lead pipeline & Front Office CRM
+            self::addColumnIfNotExists('admission_enquiry', 'assigned_to', 'INT NULL');
+            self::addColumnIfNotExists('admission_enquiry', 'class_id', 'INT NULL');
+            self::addColumnIfNotExists('admission_enquiry', 'next_follow_up_date', 'DATE NULL');
+            self::addColumnIfNotExists('admission_enquiry', 'father_name', 'VARCHAR(150) NULL');
+            self::addColumnIfNotExists('admission_enquiry', 'mother_name', 'VARCHAR(150) NULL');
+            self::addColumnIfNotExists('admission_enquiry', 'dob', 'DATE NULL');
+            self::addColumnIfNotExists('admission_enquiry', 'gender', "VARCHAR(20) DEFAULT 'Male'");
+            self::addColumnIfNotExists('admission_enquiry', 'guardian_name', 'VARCHAR(150) NULL');
+            self::addColumnIfNotExists('admission_enquiry', 'guardian_relation', 'VARCHAR(100) NULL');
+            self::addColumnIfNotExists('admission_enquiry', 'previous_school', 'VARCHAR(200) NULL');
             self::addColumnIfNotExists('admission_enquiry', 'status', "VARCHAR(50) DEFAULT 'New'");
             self::addColumnIfNotExists('admission_enquiry', 'discount_offered', 'DECIMAL(10,2) DEFAULT 0.00');
             self::addColumnIfNotExists('admission_enquiry', 'converted_student_id', 'INT NULL');
+
+            // Migrate legacy numeric values from assigned and class if applicable
+            try {
+                $db->query("UPDATE admission_enquiry SET assigned_to = CAST(assigned AS UNSIGNED) WHERE (assigned_to IS NULL OR assigned_to = 0) AND assigned REGEXP '^[0-9]+$'");
+                $db->execute();
+            } catch (Throwable $e) {}
+            try {
+                $db->query("UPDATE admission_enquiry SET class_id = CAST(class AS UNSIGNED) WHERE (class_id IS NULL OR class_id = 0) AND class REGEXP '^[0-9]+$'");
+                $db->execute();
+            } catch (Throwable $e) {}
+
+            // 21b. Subjects column synchronization (subject_name, subject_code, is_core, full_marks, passing_marks, credit_hours)
+            self::addColumnIfNotExists('subjects', 'subject_name', 'VARCHAR(100) NULL');
+            self::addColumnIfNotExists('subjects', 'name', 'VARCHAR(100) NULL');
+            self::addColumnIfNotExists('subjects', 'subject_code', 'VARCHAR(50) NULL');
+            self::addColumnIfNotExists('subjects', 'code', 'VARCHAR(50) NULL');
+            self::addColumnIfNotExists('subjects', 'is_core', 'TINYINT(1) DEFAULT 1');
+            self::addColumnIfNotExists('subjects', 'full_marks', 'DECIMAL(5,2) DEFAULT 100.00');
+            self::addColumnIfNotExists('subjects', 'passing_marks', 'DECIMAL(5,2) DEFAULT 33.00');
+            self::addColumnIfNotExists('subjects', 'credit_hours', 'INT DEFAULT 3');
+            try {
+                $db->query("UPDATE subjects SET subject_name = name WHERE (subject_name IS NULL OR subject_name = '') AND (name IS NOT NULL AND name != '')");
+                $db->execute();
+            } catch (Throwable $e) {}
+            try {
+                $db->query("UPDATE subjects SET name = subject_name WHERE (name IS NULL OR name = '') AND (subject_name IS NOT NULL AND subject_name != '')");
+                $db->execute();
+            } catch (Throwable $e) {}
 
             // ==========================================
             // PHASE 10: STUDENT EXIT CLEARANCE & PROMOTION ENGINE
@@ -867,7 +935,7 @@ class SchemaSync {
 
             self::$synced = true;
             $_SESSION['schema_synced'] = true;
-            $_SESSION['schema_v3_6_synced'] = true;
+            $_SESSION['schema_v4_0_synced'] = true;
             @file_put_contents($lockFile, date('Y-m-d H:i:s'));
         } catch (Exception $e) {
             error_log("SchemaSync error: " . $e->getMessage());
@@ -911,7 +979,7 @@ class SchemaSync {
                 return true;
             }
             return false;
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             return false;
         }
     }
@@ -919,6 +987,23 @@ class SchemaSync {
     public static function applyPerformanceIndexes() {
         $results = [];
         $indexes = [
+            // Multi-Tenant Core & Schools
+            ['schools', 'idx_schools_code', 'code'],
+            ['schools', 'idx_schools_domain', 'domain'],
+            ['schools', 'idx_schools_status', 'status'],
+
+            // Front CMS & Website Navigation Tables
+            ['front_cms_settings', 'idx_front_cms_school', 'school_id'],
+            ['front_menus', 'idx_front_menus_school_sort', 'school_id, sort_order'],
+            ['front_banners', 'idx_front_banners_school_sort', 'school_id, sort_order'],
+            ['front_news', 'idx_front_news_school_date', 'school_id, news_date'],
+            ['front_events', 'idx_front_events_school_date', 'school_id, start_date'],
+            ['front_gallery', 'idx_front_gallery_school_created', 'school_id, created_at'],
+            ['notice_board', 'idx_notices_school_status_date', 'school_id, status, publish_date'],
+            ['site_settings', 'idx_site_settings_school_key', 'school_id, setting_key'],
+            ['front_pages', 'idx_front_pages_school_slug', 'school_id, slug'],
+
+            // Core ERP Tables
             ['students', 'idx_school_status_class', 'school_id, status, class_id'],
             ['students', 'idx_school_admission_no', 'school_id, admission_no'],
             ['students', 'idx_school_parent_user', 'school_id, parent_user_id'],

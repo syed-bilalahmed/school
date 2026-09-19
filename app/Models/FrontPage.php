@@ -9,8 +9,15 @@ class FrontPage {
     }
 
     public function ensureTableSchema(){
-        if (self::$schemaChecked) return;
+        $lockFile = (defined('APPROOT') ? APPROOT : dirname(__DIR__)) . '/cache/schema_front_pages_v1.lock';
+        if (self::$schemaChecked || file_exists($lockFile)) {
+            self::$schemaChecked = true;
+            return;
+        }
         try {
+            if (class_exists('FrontMenu')) {
+                (new FrontMenu())->ensureTableSchema();
+            }
             $this->db->query("SHOW COLUMNS FROM front_pages LIKE 'file_path'");
             if(!$this->db->single()){
                 $this->db->query("ALTER TABLE front_pages ADD COLUMN file_path VARCHAR(255) NULL AFTER is_active");
@@ -26,8 +33,10 @@ class FrontPage {
                 $this->db->query("ALTER TABLE front_pages ADD COLUMN meta_description VARCHAR(255) NULL AFTER file_name");
                 $this->db->execute();
             }
+            @touch($lockFile);
             self::$schemaChecked = true;
         } catch(Throwable $e){
+            @touch($lockFile);
             self::$schemaChecked = true;
         }
     }
@@ -223,14 +232,14 @@ class FrontPage {
         $this->ensureCoreDefaultPages();
         $schoolId = class_exists('TenantContext') ? TenantContext::getSchoolId() : null;
         if ($schoolId) {
-            $this->db->query("SELECT p.*, m.id as menu_id, m.title as menu_title, m.sort_order as menu_order, m.link as menu_link, COALESCE(m.dropdown_group, 'none') as dropdown_group 
+            $this->db->query("SELECT p.*, m.id as menu_id, COALESCE(m.title, m.menu_title) as menu_title, m.sort_order as menu_order, COALESCE(m.link, m.menu_url) as menu_link, COALESCE(m.dropdown_group, 'none') as dropdown_group 
                               FROM front_pages p 
                               LEFT JOIN front_menus m ON m.page_id = p.id AND (m.school_id = :school_id OR m.school_id IS NULL) 
                               WHERE p.school_id = :school_id OR p.school_id IS NULL 
                               ORDER BY p.created_at DESC");
             $this->db->bind(':school_id', $schoolId);
         } else {
-            $this->db->query("SELECT p.*, m.id as menu_id, m.title as menu_title, m.sort_order as menu_order, m.link as menu_link, COALESCE(m.dropdown_group, 'none') as dropdown_group 
+            $this->db->query("SELECT p.*, m.id as menu_id, COALESCE(m.title, m.menu_title) as menu_title, m.sort_order as menu_order, COALESCE(m.link, m.menu_url) as menu_link, COALESCE(m.dropdown_group, 'none') as dropdown_group 
                               FROM front_pages p 
                               LEFT JOIN front_menus m ON m.page_id = p.id 
                               ORDER BY p.created_at DESC");
@@ -243,14 +252,14 @@ class FrontPage {
         $this->ensureCoreDefaultPages();
         $schoolId = class_exists('TenantContext') ? TenantContext::getSchoolId() : null;
         if ($schoolId) {
-            $this->db->query("SELECT p.*, m.id as menu_id, m.title as menu_title, m.sort_order as menu_order, COALESCE(m.dropdown_group, 'none') as dropdown_group 
+            $this->db->query("SELECT p.*, m.id as menu_id, COALESCE(m.title, m.menu_title) as menu_title, m.sort_order as menu_order, COALESCE(m.dropdown_group, 'none') as dropdown_group 
                               FROM front_pages p 
                               LEFT JOIN front_menus m ON m.page_id = p.id 
                               WHERE p.id = :id AND (p.school_id = :school_id OR p.school_id IS NULL)");
             $this->db->bind(':id', $id);
             $this->db->bind(':school_id', $schoolId);
         } else {
-            $this->db->query("SELECT p.*, m.id as menu_id, m.title as menu_title, m.sort_order as menu_order, COALESCE(m.dropdown_group, 'none') as dropdown_group 
+            $this->db->query("SELECT p.*, m.id as menu_id, COALESCE(m.title, m.menu_title) as menu_title, m.sort_order as menu_order, COALESCE(m.dropdown_group, 'none') as dropdown_group 
                               FROM front_pages p 
                               LEFT JOIN front_menus m ON m.page_id = p.id 
                               WHERE p.id = :id");

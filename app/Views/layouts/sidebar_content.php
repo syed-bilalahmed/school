@@ -789,6 +789,14 @@
             <span>Settings &amp; Roles</span>
         </a>
     </li>
+    <?php if(in_array($role, ['admin', 'super_admin'])): ?>
+    <li class="sidebar-nav-item">
+        <a href="<?php echo URLROOT; ?>/admin/schools" class="sidebar-nav-link <?php echo $isRouteActive('admin/schools'); ?>">
+            <i class="fa fa-code-branch text-success"></i>
+            <span>Campuses &amp; Branches</span>
+        </a>
+    </li>
+    <?php endif; ?>
     <li class="sidebar-nav-item">
         <a href="<?php echo URLROOT; ?>/profile/index" class="sidebar-nav-link <?php echo $isRouteActive('profile'); ?>">
             <i class="fa fa-user-gear text-primary"></i>

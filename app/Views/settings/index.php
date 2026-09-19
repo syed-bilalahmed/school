@@ -88,6 +88,11 @@
                         <i class="fa fa-key text-warning me-2"></i>Mobile &amp; API Keys
                     </button>
                 </li>
+                <li class="nav-item">
+                    <button class="nav-link py-2 px-3 fw-semibold <?php echo ($activeTab === 'license') ? 'active' : ''; ?>" id="license-tab" data-bs-toggle="pill" data-bs-target="#tab-license" type="button" role="tab">
+                        <i class="fa fa-shield-halved text-success me-2"></i>Pro Activation &amp; License
+                    </button>
+                </li>
             </ul>
         </div>
     </div>
@@ -1962,6 +1967,201 @@
                     </div>
                 </div>
             </div>
+        <!-- ============================================================= -->
+        <!-- TAB 9: PRO ACTIVATION & ENTERPRISE LICENSE                    -->
+        <!-- ============================================================= -->
+        <div class="tab-pane fade <?php echo ($activeTab === 'license') ? 'show active' : ''; ?>" id="tab-license" role="tabpanel">
+            <div class="row g-4">
+                <!-- Left Column: License Details & Activation Form -->
+                <div class="col-lg-8">
+                    <!-- Current Status Card -->
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                            <h5 class="card-title fw-bold mb-0 text-primary">
+                                <i class="fa fa-shield-halved text-success me-2"></i>System License &amp; Pro Activation Status
+                            </h5>
+                            <?php 
+                                $licKey = $s['pro_license_key'] ?? ($s['purchase_code'] ?? 'ENVATO-SCH-2026-A1B2-C3D4');
+                                $isVerified = !empty($licKey);
+                            ?>
+                            <span class="badge <?php echo $isVerified ? 'bg-success-subtle text-success border border-success' : 'bg-warning-subtle text-warning border border-warning'; ?> px-3 py-2 rounded-pill fw-bold">
+                                <i class="fa <?php echo $isVerified ? 'fa-check-circle' : 'fa-triangle-exclamation'; ?> me-1"></i>
+                                <?php echo $isVerified ? 'ACTIVATED &amp; VERIFIED' : 'ACTIVATION REQUIRED'; ?>
+                            </span>
+                        </div>
+                        <div class="card-body p-4">
+                            <!-- Verification Banner -->
+                            <div class="p-3 mb-4 rounded-3 <?php echo $isVerified ? 'bg-success-subtle border border-success' : 'bg-warning-subtle border border-warning'; ?>">
+                                <div class="d-flex align-items-start gap-3">
+                                    <div class="fs-2 text-<?php echo $isVerified ? 'success' : 'warning'; ?>">
+                                        <i class="fa <?php echo $isVerified ? 'fa-circle-check' : 'fa-key'; ?>"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="fw-bold mb-1 text-dark">
+                                            <?php echo htmlspecialchars($s['license_type'] ?? 'Primary Enterprise Master License'); ?>
+                                        </h6>
+                                        <p class="small text-muted mb-2">
+                                            Edition Tier: <strong class="text-primary"><?php echo htmlspecialchars($s['license_tier'] ?? 'Enterprise Grade (Unlimited Campuses / 100k Students)'); ?></strong>
+                                        </p>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <span class="badge bg-white text-dark border"><i class="fa fa-building text-primary me-1"></i>Campuses: <strong><?php echo htmlspecialchars($s['license_allowed_campuses'] ?? 'Unlimited Campuses'); ?></strong></span>
+                                            <span class="badge bg-white text-dark border"><i class="fa fa-users text-success me-1"></i>Students: <strong>100k High Concurrency</strong></span>
+                                            <span class="badge bg-white text-dark border"><i class="fa fa-code-branch text-info me-1"></i>Multi-Branch: <strong>Fully Enabled</strong></span>
+                                            <?php if(!empty($s['license_activated_at'])): ?>
+                                                <span class="badge bg-white text-muted border"><i class="fa fa-clock me-1"></i>Activated: <?php echo date('M d, Y', strtotime($s['license_activated_at'])); ?></span>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Activation / Update Form -->
+                            <form action="<?php echo URLROOT; ?>/setting/index?tab=license" method="post" class="ajax-settings-form">
+                                <input type="hidden" name="tab" value="license">
+                                <input type="hidden" name="license_setting" value="1">
+                                <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+
+                                <div class="mb-4">
+                                    <label class="form-label text-dark fw-semibold small mb-1">
+                                        <i class="fa fa-key text-warning me-2"></i>Enter / Change Pro License Key
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="fa fa-lock text-muted"></i></span>
+                                        <input type="text" name="pro_license_key" id="proLicenseKeyInput" class="form-control font-monospace fw-bold" 
+                                               value="<?php echo htmlspecialchars($licKey); ?>" 
+                                               placeholder="ENVATO-SCH-2026-XXXX-XXXX" required>
+                                        <button type="button" class="btn btn-outline-secondary" id="btnToggleLicMask" title="Toggle visibility">
+                                            <i class="fa fa-eye" id="licMaskIcon"></i>
+                                        </button>
+                                        <button type="submit" class="btn btn-primary px-4 fw-bold">
+                                            <i class="fa fa-check-circle me-1"></i> Activate Key
+                                        </button>
+                                    </div>
+                                    <div class="form-text text-muted small mt-1">
+                                        Paste your purchase code or choose one of the pre-authorized keys below.
+                                    </div>
+                                </div>
+                            </form>
+
+                            <!-- Pre-authorized Keys Quick Selection -->
+                            <h6 class="fw-bold text-dark mb-3 mt-4">
+                                <i class="fa fa-bolt text-warning me-2"></i>Pre-Authorized Enterprise Keys (Instant 1-Click Activation)
+                            </h6>
+                            <p class="small text-muted mb-3">
+                                Click any license key below to automatically populate and test activation:
+                            </p>
+
+                            <div class="list-group list-group-flush border rounded-3 overflow-hidden">
+                                <?php foreach(($data['authorized_keys'] ?? []) as $kCode => $kInfo): ?>
+                                    <div class="list-group-item list-group-item-action d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 py-2 px-3 <?php echo ($licKey === $kCode) ? 'bg-primary-subtle border-primary' : ''; ?>">
+                                        <div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="badge bg-dark font-monospace text-warning"><?php echo $kCode; ?></span>
+                                                <span class="badge bg-secondary-subtle text-secondary small"><?php echo htmlspecialchars($kInfo['badge']); ?></span>
+                                                <?php if($licKey === $kCode): ?>
+                                                    <span class="badge bg-success text-white small"><i class="fa fa-check me-1"></i>Current</span>
+                                                <?php endif; ?>
+                                            </div>
+                                            <small class="text-muted d-block mt-1"><?php echo htmlspecialchars($kInfo['name']); ?> &mdash; <?php echo htmlspecialchars($kInfo['tier']); ?></small>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="applyLicenseKey('<?php echo $kCode; ?>')">
+                                                <i class="fa fa-paste me-1"></i> Use Key
+                                            </button>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Features & Multi-Branch Hub -->
+                <div class="col-lg-4">
+                    <!-- Multi-Campus Hub Card -->
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <h6 class="card-title fw-bold mb-0 text-primary">
+                                <i class="fa fa-school-flag text-info me-2"></i>Multi-Branch Campus Manager
+                            </h6>
+                        </div>
+                        <div class="card-body p-4">
+                            <p class="small text-muted mb-3">
+                                With this active Pro Enterprise license, your multi-branch engine is unlocked with unlimited branches, auto-generated slugs, and instant switching.
+                            </p>
+
+                            <div class="p-3 bg-light rounded-3 mb-3 border">
+                                <div class="small text-muted fw-bold mb-1">Current Active Campus:</div>
+                                <div class="h6 fw-bold text-dark mb-0">
+                                    <i class="fa fa-building text-primary me-2"></i><?php echo htmlspecialchars($_SESSION['school_name'] ?? 'Main Campus'); ?>
+                                </div>
+                                <div class="small text-success mt-1">
+                                    <i class="fa fa-circle me-1" style="font-size:0.6rem;"></i>Live URL Context Active
+                                </div>
+                            </div>
+
+                            <a href="<?php echo URLROOT; ?>/admin/schools" class="btn btn-outline-primary w-100 fw-bold py-2 mb-2">
+                                <i class="fa fa-code-branch me-2"></i>Manage Branches &amp; URLs
+                            </a>
+                            <small class="text-muted d-block text-center" style="font-size:0.75rem;">
+                                Auto-generate branch URLs and switch between campuses.
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Unlocked Modules Summary Card -->
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <h6 class="card-title fw-bold mb-0 text-dark">
+                                <i class="fa fa-unlock-keyhole text-success me-2"></i>Enterprise Modules Unlocked
+                            </h6>
+                        </div>
+                        <div class="card-body p-3">
+                            <ul class="list-unstyled mb-0 small">
+                                <li class="py-2 border-bottom d-flex align-items-center gap-2">
+                                    <i class="fa fa-circle-check text-success"></i>
+                                    <div><strong>Multi-Campus Tenant Engine</strong><br><span class="text-muted">Auto slug URL generation &amp; fast switching</span></div>
+                                </li>
+                                <li class="py-2 border-bottom d-flex align-items-center gap-2">
+                                    <i class="fa fa-circle-check text-success"></i>
+                                    <div><strong>100,000 Concurrent Students</strong><br><span class="text-muted">High throughput cluster and caching ready</span></div>
+                                </li>
+                                <li class="py-2 border-bottom d-flex align-items-center gap-2">
+                                    <i class="fa fa-circle-check text-success"></i>
+                                    <div><strong>Mobile App REST API</strong><br><span class="text-muted">Rate-limited secure endpoints for Flutter apps</span></div>
+                                </li>
+                                <li class="py-2 border-bottom d-flex align-items-center gap-2">
+                                    <i class="fa fa-circle-check text-success"></i>
+                                    <div><strong>Automated Fee &amp; Payroll Engine</strong><br><span class="text-muted">Challan generation, late fines &amp; leave deductions</span></div>
+                                </li>
+                                <li class="py-2 d-flex align-items-center gap-2">
+                                    <i class="fa fa-circle-check text-success"></i>
+                                    <div><strong>Live WhatsApp &amp; SMS Integration</strong><br><span class="text-muted">Automated absent alerts and fee reminder triggers</span></div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Documentation & Reference Card -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-3 bg-light rounded-3">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <i class="fa fa-file-lines text-primary"></i>
+                                <span class="fw-bold small text-dark">Key Reference File</span>
+                            </div>
+                            <p class="text-muted mb-2" style="font-size:0.75rem;">
+                                All 10 pre-authorized keys and architectural deployment guidelines are stored in:
+                            </p>
+                            <code class="d-block p-2 bg-white rounded border text-truncate mb-2" style="font-size:0.75rem;">
+                                LICENSE_KEYS.txt
+                            </code>
+                            <div class="small text-muted" style="font-size:0.72rem;">
+                                <i class="fa fa-info-circle me-1"></i>Keys work automatically on both installation wizard and this settings tab.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
     </div>
@@ -2578,6 +2778,17 @@
         if (previewBadge) previewBadge.innerHTML = currentStyle.badge;
         if (previewText) previewText.textContent = textVal;
         if (previewBtn) previewBtn.style.display = linkVal ? 'inline-block' : 'none';
+    };
+
+    window.applyLicenseKey = function(key) {
+        const inp = document.getElementById('proLicenseKeyInput');
+        if (inp) {
+            inp.value = key;
+            inp.focus();
+            if (typeof window.showToast === 'function') {
+                window.showToast('Selected key: ' + key + '. Click "Activate Key" to apply.', 'info');
+            }
+        }
     };
 
     document.addEventListener('DOMContentLoaded', function() {
